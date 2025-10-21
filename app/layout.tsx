@@ -4,6 +4,7 @@ import "./globals.css";
 import Link from "next/link";
 import { GitHubLogoIcon, LinkedInLogoIcon } from "@radix-ui/react-icons";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "react-hot-toast";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,6 +38,16 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <Toaster
+            position="top-right"
+            containerStyle={{ top: "5rem", right: "1rem" }}
+            toastOptions={{
+              style: {
+                border: "1px solid #713200",
+                padding: "16px",
+              },
+            }}
+          />
           {children}
           <footer className="w-full py-6 border-t">
             <div className="container flex flex-col items-center justify-between gap-4 md:h-16 md:flex-row px-8">
