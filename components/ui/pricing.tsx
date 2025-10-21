@@ -126,8 +126,8 @@ export function Pricing() {
 
         <div className="mt-8 text-center text-sm text-muted-foreground">
           <p>
-            Need help deciding? We're here to help you choose the right plan for
-            your needs.
+            Need help deciding? We&apos;re here to help you choose the right
+            plan for your needs.
           </p>
         </div>
       </div>
