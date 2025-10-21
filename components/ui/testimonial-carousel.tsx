@@ -3,6 +3,7 @@
 import useEmblaCarousel from "embla-carousel-react";
 import { useEffect } from "react";
 import { QuoteIcon } from "@radix-ui/react-icons";
+import Image from "next/image";
 
 const TESTIMONIALS = [
   {
@@ -115,7 +116,9 @@ export function TestimonialCarousel() {
                 </blockquote>
                 <footer className="mt-auto pt-4 flex flex-col items-center border-t border-border/50">
                   <div className="w-16 h-16 rounded-full overflow-hidden mb-3 border-2 border-primary/20 shadow-sm">
-                    <img
+                    <Image
+                      width={200}
+                      height={200}
                       src={`https://picsum.photos/seed/${t.author}/200/200`}
                       alt={t.author}
                       className=" object-cover"
