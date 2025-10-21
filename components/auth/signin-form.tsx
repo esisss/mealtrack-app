@@ -63,9 +63,6 @@ export function SigninForm() {
                 required
                 disabled={isPending}
               />
-              {state.errors.email && (
-                <p className="text-red-500 text-sm">{state.errors.email[0]}</p>
-              )}
             </div>
 
             <div className="space-y-2">
@@ -86,10 +83,8 @@ export function SigninForm() {
                 required
                 disabled={isPending}
               />
-              {state.errors.password && (
-                <p className="text-red-500 text-sm">
-                  {state.errors.password[0]}
-                </p>
+              {state.errors.error && (
+                <p className="text-red-500 text-sm">{state.errors.error[0]}</p>
               )}
             </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useActionState, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,42 +11,29 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-
-type FormErrors = {
-  name?: string;
-  email?: string;
-  password?: string;
-  confirmPassword?: string;
-  general?: string;
+import { ActionResponse, signupAction } from "@/app/actions/auth";
+import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
+const initialState: ActionResponse = {
+  success: false,
+  message: "",
+  errors: {},
 };
-
 export function SignupForm() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<FormErrors>({});
-
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setIsLoading(true);
-    setErrors({}); // Clear previous errors
-
-    // TODO: Add your server action here
-    const formData = new FormData(e.currentTarget);
-
-    // Placeholder for server action
-    console.log({
-      name: formData.get("name"),
-      email: formData.get("email"),
-      password: formData.get("password"),
-    });
-
-    // Example: Set errors from backend response
-    // const result = await signupAction(formData);
-    // if (!result.success && result.errors) {
-    //   setErrors(result.errors);
-    // }
-
-    setIsLoading(false);
-  }
+  const router = useRouter();
+  const [state, signUpAction, isPending] = useActionState<
+    ActionResponse,
+    FormData
+  >(async (prevState: ActionResponse, payload: FormData) => {
+    const response = await signupAction(payload);
+    if (!response.success) {
+      toast.error(response.message);
+      return response;
+    }
+    toast.success(response.message);
+    router.replace("/dashboard");
+    return response;
+  }, initialState);
 
   return (
     <Card className="w-full max-w-md mx-auto">
@@ -57,7 +44,7 @@ export function SignupForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form action={signUpAction} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Full Name</Label>
             <Input
@@ -66,11 +53,11 @@ export function SignupForm() {
               type="text"
               placeholder="John Doe"
               required
-              disabled={isLoading}
-              aria-invalid={!!errors.name}
+              disabled={isPending}
+              aria-invalid={!!state.errors.name}
             />
-            {errors.name && (
-              <p className="text-sm text-destructive">{errors.name}</p>
+            {state.errors.name && (
+              <p className="text-sm text-destructive">{state.errors.name[0]}</p>
             )}
           </div>
 
@@ -82,11 +69,13 @@ export function SignupForm() {
               type="email"
               placeholder="you@example.com"
               required
-              disabled={isLoading}
-              aria-invalid={!!errors.email}
+              disabled={isPending}
+              aria-invalid={!!state.errors.email}
             />
-            {errors.email && (
-              <p className="text-sm text-destructive">{errors.email}</p>
+            {state.errors.email && (
+              <p className="text-sm text-destructive">
+                {state.errors.email[0]}
+              </p>
             )}
           </div>
 
@@ -98,12 +87,13 @@ export function SignupForm() {
               type="password"
               placeholder="••••••••"
               required
-              minLength={8}
-              disabled={isLoading}
-              aria-invalid={!!errors.password}
+              disabled={isPending}
+              aria-invalid={!!state.errors.password}
             />
-            {errors.password && (
-              <p className="text-sm text-destructive">{errors.password}</p>
+            {state.errors.password && (
+              <p className="text-sm text-destructive">
+                {state.errors.password[0]}
+              </p>
             )}
           </div>
 
@@ -115,25 +105,18 @@ export function SignupForm() {
               type="password"
               placeholder="••••••••"
               required
-              minLength={8}
-              disabled={isLoading}
-              aria-invalid={!!errors.confirmPassword}
+              disabled={isPending}
+              aria-invalid={!!state.errors.confirmPassword}
             />
-            {errors.confirmPassword && (
+            {state.errors.confirmPassword && (
               <p className="text-sm text-destructive">
-                {errors.confirmPassword}
+                {state.errors.confirmPassword[0]}
               </p>
             )}
           </div>
 
-          {errors.general && (
-            <div className="p-3 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md">
-              {errors.general}
-            </div>
-          )}
-
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Creating account..." : "Sign Up"}
+          <Button type="submit" className="w-full" disabled={isPending}>
+            {isPending ? "Creating account..." : "Sign Up"}
           </Button>
 
           <p className="text-sm text-center text-muted-foreground">

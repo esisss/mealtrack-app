@@ -40,7 +40,7 @@ export default function RootLayout({
         >
           <Toaster
             position="top-right"
-            containerStyle={{ top: "5rem", right: "1rem" }}
+            containerStyle={{ top: "2rem", right: "2rem" }}
             toastOptions={{
               style: {
                 border: "1px solid #713200",
