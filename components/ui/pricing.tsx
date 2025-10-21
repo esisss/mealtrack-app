@@ -21,7 +21,7 @@ export const PRICING_PLANS = [
   },
   {
     name: "Still Free",
-    price: "$0",
+    price: "$000",
     tagline: "Wait… did you think we'd charge?",
     features: [
       "Same as above",
@@ -34,7 +34,7 @@ export const PRICING_PLANS = [
   },
   {
     name: "Free++",
-    price: "$0",
+    price: "$0.000,00",
     tagline: "The premiumest free plan.",
     features: [
       "Priority support from… yourself",
@@ -49,7 +49,7 @@ export const PRICING_PLANS = [
 
 export function Pricing() {
   return (
-    <section className="w-full bg-background">
+    <section className="w-screen bg-background flex items-center justify-center">
       <div className="container px-4 md:px-6">
         <div className="flex flex-col items-center justify-center space-y-4 text-center">
           <div className="space-y-2">
@@ -63,8 +63,8 @@ export function Pricing() {
           </div>
         </div>
 
-        <div className="grid gap-6 mt-12 md:grid-cols-2 lg:grid-cols-3">
-          {PRICING_PLANS.map((plan, index) => (
+        <div className="grid gap-6 mt-12 md:grid-cols-2 lg:grid-cols-3 mx-auto">
+          {PRICING_PLANS.map((plan) => (
             <Card
               key={plan.name}
               className={cn(
