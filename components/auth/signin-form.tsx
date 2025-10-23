@@ -32,7 +32,7 @@ export function SigninForm() {
         toast.success(response.message);
         router.replace("/dashboard");
         return response;
-      } catch (error: any) {
+      } catch {
         toast.error("An error occurred");
         return {
           success: false,
