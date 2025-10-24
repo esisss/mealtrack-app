@@ -57,13 +57,13 @@ export function Navbar() {
           <div className="hidden sm:ml-6 sm:flex sm:items-center space-x-2">
             <ThemeToggle />
             <Link
-              href="/signin"
+              href="/handler/sign-in"
               className="text-muted-foreground hover:text-foreground px-3 py-2 text-sm font-medium transition-colors"
             >
               Sign in
             </Link>
             <Link
-              href="/signup"
+              href="/handler/sign-up"
               className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-md text-sm font-medium transition-colors"
             >
               Sign up
@@ -168,14 +168,14 @@ export function Navbar() {
             <AccordionContent>
               <div className="space-y-2">
                 <Link
-                  href="/signin"
+                  href="/handler/sign-in"
                   className="block px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
                   onClick={() => setIsOpen(false)}
                 >
                   Sign in
                 </Link>
                 <Link
-                  href="/signup"
+                  href="/handler/sign-up"
                   className="block px-3 py-2 text-base font-medium bg-primary hover:bg-primary/90 text-primary-foreground rounded-md transition-colors text-center"
                   onClick={() => setIsOpen(false)}
                 >
