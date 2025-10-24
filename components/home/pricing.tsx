@@ -1,6 +1,12 @@
 import Link from "next/link";
-import { Button } from "./button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./card";
+import { Button } from "../ui/button";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "../ui/card";
 import { cn } from "@/lib/utils";
 
 export const PRICING_PLANS = [
@@ -110,10 +116,10 @@ export function Pricing() {
                   <Button
                     size="lg"
                     className={cn(
-                      "w-full",
+                      "w-full cursor-pointer",
                       plan.highlight
                         ? "bg-primary hover:bg-primary/90"
-                        : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                        : "bg-secondary hover:bg-primary/90 hover:text-primary-foreground text-secondary-foreground"
                     )}
                   >
                     {plan.cta}
