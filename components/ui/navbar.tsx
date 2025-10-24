@@ -29,26 +29,7 @@ export function Navbar() {
             >
               MealWise
             </Link>
-            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-              <Link
-                href="/recipes"
-                className="border-transparent text-muted-foreground hover:text-foreground hover:border-primary inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors"
-              >
-                Recipes
-              </Link>
-              <Link
-                href="/features"
-                className="border-transparent text-muted-foreground hover:text-foreground hover:border-primary inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors"
-              >
-                Features
-              </Link>
-              <Link
-                href="/pricing"
-                className="border-transparent text-muted-foreground hover:text-foreground hover:border-primary inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors"
-              >
-                Pricing
-              </Link>
-            </div>
+            <div className="hidden sm:ml-6 sm:flex sm:space-x-8"></div>
           </div>
 
           {/* Center - Navigation Links */}
