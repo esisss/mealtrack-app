@@ -5,20 +5,39 @@ import { stackServerApp } from "@/stack/server";
 export async function middleware(request: NextRequest) {
   const user = await stackServerApp.getUser();
   const { pathname } = request.nextUrl;
+  const loggedOffRoutes = ["/handler/sign-in", "/handler/sign-up", "/"];
+  const loggedInRoutes = [
+    "/dashboard",
+    "/grocery-list",
+    "/pantry",
+    "/planner",
+    "/recipes",
+    "/settings",
+  ];
 
-  // If user is logged in and tries to access home, redirect to dashboard
-  if (user && (pathname === "/" || pathname === "/home")) {
+  if (user && loggedOffRoutes.includes(pathname)) {
+    console.log("User is logged in");
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  // If user is not logged in and tries to access dashboard, redirect to home
-  if (!user && pathname.startsWith("/dashboard")) {
-    return NextResponse.redirect(new URL("/", request.url));
+  if (!user && loggedInRoutes.includes(pathname)) {
+    console.log("User is not logged in");
+    return NextResponse.redirect(new URL("/handler/sign-in", request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/", "/(home)", "/dashboard/:path*"],
+  matcher: [
+    "/",
+    "/dashboard",
+    "/grocery-list",
+    "/pantry",
+    "/planner",
+    "/recipes",
+    "/settings",
+    "/handler/sign-in",
+    "/handler/sign-up",
+  ],
 };
