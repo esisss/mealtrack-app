@@ -1,15 +1,14 @@
-import { Navbar } from "@/components/ui/navbar";
-import { GitHubLogoIcon, LinkedInLogoIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
 
-export default function LandingPage({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function AuthHandlerLayout({ children }) {
   return (
-    <div>
-      <Navbar />
+    <section>
+      <Link href="/">
+        <h2 className="text-xl font-bold italic m-4">
+          Meal<strong className="text-primary">Wise</strong>
+        </h2>
+      </Link>
+
       {children}
       <footer className="w-full py-6 border-t">
         <div className="container flex flex-col items-center justify-between gap-4 md:h-16 md:flex-row px-8">
@@ -31,7 +30,7 @@ export default function LandingPage({
               <GitHubLogoIcon className="h-5 w-5" />
             </Link>
             <Link
-              href="https://linkedin.com/in/jesus-esis-93945b170/"
+              href="https://www.linkedin.com/in/jesus-esis-93945b170/"
               target="_blank"
               rel="noreferrer"
             >
@@ -40,6 +39,6 @@ export default function LandingPage({
           </div>
         </div>
       </footer>
-    </div>
+    </section>
   );
 }
