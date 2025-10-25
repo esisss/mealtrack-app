@@ -232,7 +232,7 @@ body {
 }
 
 .boxes .box > div:nth-child(2) {
-  --background: #4cac50;
+  --background: #64b667;
   --right: 0;
   --rotateY: 90deg;
 }

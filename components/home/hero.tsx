@@ -14,13 +14,18 @@ export const Hero = () => {
             </h1>
 
             <div className="mt-6 lg:mt-12 flex justify-center gap-4">
-              <Link href="/signup">
-                <Button size="lg">Get Started</Button>
-              </Link>
-              <Link href="/signin">
+              <Link href="/handler/sign-up">
                 <Button
                   size="lg"
-                  className="text-muted-foreground"
+                  className="transition-colors cursor-pointer  text-base"
+                >
+                  Get Started
+                </Button>
+              </Link>
+              <Link href="/handler/sign-up">
+                <Button
+                  size="lg"
+                  className="text-muted-foreground hover:text-primary cursor-pointer transition-colors text-base"
                   variant="outline"
                 >
                   Browse Recipes
