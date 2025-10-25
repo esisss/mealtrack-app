@@ -1,3 +1,4 @@
+import { GitHubLogoIcon, LinkedInLogoIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
 
 export default function AuthHandlerLayout({ children }) {
