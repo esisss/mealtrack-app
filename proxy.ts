@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { stackServerApp } from "@/stack/server";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const user = await stackServerApp.getUser();
   const { pathname } = request.nextUrl;
   const loggedOffRoutes = ["/handler/sign-in", "/handler/sign-up", "/"];
