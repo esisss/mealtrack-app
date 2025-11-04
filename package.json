@@ -7,11 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:generate": "drizzle-kit generate:pg",
+    "db:generate": "drizzle-kit generate",
     "db:migrate:dev": "NODE_ENV=development drizzle-kit migrate",
     "db:migrate:prod": "NODE_ENV=production drizzle-kit migrate",
-    "db:push:dev": "NODE_ENV=development drizzle-kit push:pg",
-    "db:push:prod": "NODE_ENV=production drizzle-kit push:pg"
+    "db:push:dev": "NODE_ENV=development drizzle-kit push",
+    "db:push:prod": "NODE_ENV=production drizzle-kit push"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",
