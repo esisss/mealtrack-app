@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, ReactNode } from "react";
+import { useEffect, useState, ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 interface ModalProps {
@@ -10,19 +10,11 @@ interface ModalProps {
 }
 
 export function Modal({ children, isOpen, onClose }: ModalProps) {
-  const modalRoot =
-    typeof window !== "undefined"
-      ? document.getElementById("modal-root")
-      : null;
-  const el = useRef(document.createElement("div"));
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    const currentEl = el.current;
-    modalRoot?.appendChild(currentEl);
-    return () => {
-      modalRoot?.removeChild(currentEl);
-    };
-  }, [modalRoot]);
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -44,7 +36,13 @@ export function Modal({ children, isOpen, onClose }: ModalProps) {
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen || !modalRoot) {
+  if (!isClient || !isOpen) {
+    return null;
+  }
+
+  const modalRoot = document.getElementById("modal-root");
+  if (!modalRoot) {
+    console.error("Modal root not found");
     return null;
   }
 
@@ -54,12 +52,12 @@ export function Modal({ children, isOpen, onClose }: ModalProps) {
       onClick={onClose}
     >
       <div
-        className="relative bg-white dark:bg-gray-900 rounded-lg shadow-xl p-6 w-full max-w-md"
+        className="relative bg-sidebar rounded-lg shadow-xl p-6 w-full max-w-md"
         onClick={(e) => e.stopPropagation()}
       >
         {children}
       </div>
     </div>,
-    el.current
+    modalRoot
   );
 }
