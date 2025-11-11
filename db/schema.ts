@@ -14,7 +14,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
-export const baseUnit = pgEnum("base_unit", ["g", "ml", "unit"]);
+export const baseUnit = pgEnum("base_unit", ["g", "ml", "unit", "cups", "tbsp", "tsp"]);
 export const mealType = pgEnum("meal_type", [
   "breakfast",
   "lunch",
@@ -73,11 +73,12 @@ export const recipeIngredients = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     recipeId: uuid("recipe_id").notNull(),
     pantryItemId: uuid("pantry_item_id").notNull(),
-    qtyPerServing: numeric("qty_per_serving").notNull(), // en baseUnit del pantry_item
+    qtyPerServing: numeric("qty_per_serving").notNull(), 
     notes: varchar("notes", { length: 200 }),
   },
   (t) => [uniqueIndex("recipe_item_uq").on(t.recipeId, t.pantryItemId)]
 );
+export type RecipeIngredient = typeof recipeIngredients;
 export const mealCycles = pgTable(
   "meal_cycles",
   {

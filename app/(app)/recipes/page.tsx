@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Loader } from "@/components/ui/loader";
-import { RecipeForm } from "@/components/forms/recipe-form";
+import { RecipeForm } from "@/components/forms/ui/recipe-form";
 
 // Simulate the shape of a recipe
 interface Recipe {
@@ -86,14 +86,14 @@ export default function RecipesPage() {
         </div>
       ) : (
         <div className="text-center py-10 border-2 border-dashed rounded-lg">
-          <p className="mb-4">You haven't added any recipes yet.</p>
+          <p className="mb-4">You haven`&apos;`t added any recipes yet.</p>
           <Button onClick={openModal}>Add Your First Recipe</Button>
         </div>
       )}
 
       <Modal isOpen={isModalOpen} onClose={closeModal}>
         <h2 className="text-xl font-bold mb-4">Add a New Recipe</h2>
-        <RecipeForm />
+        <RecipeForm onSuccess={closeModal} />
       </Modal>
     </div>
   );
