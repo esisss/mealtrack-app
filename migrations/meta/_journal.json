@@ -15,6 +15,13 @@
       "when": 1762288274162,
       "tag": "0001_nasty_george_stacy",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1763180057763,
+      "tag": "0002_left_vapor",
+      "breakpoints": true
     }
   ]
 }

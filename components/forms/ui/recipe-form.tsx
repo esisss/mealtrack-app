@@ -1,7 +1,6 @@
 'use client';
 
 import { useActionState, useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
 import {
   RecipeActionResponse,
   validateAndSendRecipe,
@@ -9,21 +8,15 @@ import {
 import { LoaderCircleIcon, Trash } from 'lucide-react';
 import { SearchBarSelect } from '@/components/ui/searchbarselect';
 import { toast } from 'react-hot-toast';
-
-// Types
-type BaseUnit = 'g' | 'ml' | 'unit' | 'cups' | 'tbsp' | 'tsp';
-
-interface RecipeIngredient {
-  id: number;
-  name: string;
-  baseUnit: BaseUnit;
-}
+import { IngredientItem } from './ingredient-item';
+import { PantryItemSelect } from '@/types';
+import { AddNewIngredient } from './addNewIngredientInput';
+import { Button } from '@/components/ui/button';
 
 interface SelectedIngredient {
-  id: number;
+  id: string;
   qty: string;
 }
-
 // Constants
 const INITIAL_STATE: RecipeActionResponse = {
   success: false,
@@ -31,116 +24,19 @@ const INITIAL_STATE: RecipeActionResponse = {
   errors: {},
 };
 
-const AVAILABLE_UNITS: BaseUnit[] = ['g', 'ml', 'unit', 'cups', 'tbsp', 'tsp'];
-
-const MOCK_INGREDIENTS: RecipeIngredient[] = [
-  { id: 1, name: 'Flour', baseUnit: 'g' },
-  { id: 2, name: 'Sugar', baseUnit: 'g' },
-  { id: 3, name: 'Eggs', baseUnit: 'unit' },
-  { id: 4, name: 'Milk', baseUnit: 'ml' },
-  { id: 5, name: 'Tomatoes', baseUnit: 'g' },
-  { id: 6, name: 'Cheese', baseUnit: 'g' },
-];
-
-// Components
-interface AddNewIngredientProps {
-  newIngredient: string;
-  setNewIngredient: (value: string) => void;
-  newBaseUnit: BaseUnit;
-  setNewBaseUnit: (value: BaseUnit) => void;
-  onAdd: () => void;
-}
-
-const AddNewIngredient = ({
-  newIngredient,
-  setNewIngredient,
-  newBaseUnit,
-  setNewBaseUnit,
-  onAdd
-}: AddNewIngredientProps) => (
-  <div>
-    <label
-      htmlFor="newIngredient"
-      className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-    >
-      Add New Ingredient
-    </label>
-    <div className="mt-1 flex rounded-md shadow-sm">
-      <input
-        type="text"
-        id="newIngredient"
-        value={newIngredient}
-        onChange={(e) => setNewIngredient(e.target.value)}
-        className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-l-md focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm border-gray-300 dark:bg-gray-800 dark:border-gray-600"
-      />
-      <select
-        value={newBaseUnit}
-        onChange={(e) => setNewBaseUnit(e.target.value as BaseUnit)}
-        className="px-3 py-2 border-gray-300 dark:bg-gray-800 dark:border-gray-600 text-sm"
-      >
-        {AVAILABLE_UNITS.map(unit => (
-          <option key={unit} value={unit}>{unit}</option>
-        ))}
-      </select>
-      <Button
-        type="button"
-        onClick={onAdd}
-        className="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300"
-      >
-        Add
-      </Button>
-    </div>
-  </div>
-);
-
-interface IngredientItemProps {
-  name: string,
-  ingredient: RecipeIngredient;
-  qty: string;
-  baseUnit: string;
-  index: number;
-  onQuantityChange: (id: number, qty: string) => void;
-  onRemove: (id: number) => void;
-}
-
-const IngredientItem = ({ ingredient, qty, baseUnit, name, index, onQuantityChange, onRemove }: IngredientItemProps) => (
-  <div className="flex items-center justify-between p-2 border rounded">
-    <input readOnly className='field-sizing-content outline-none pointer-events-none' type="text" name={`ingredients[${index}][name]`} value={name} />
-    <div className="flex items-center gap-2">
-      <input
-        name={`ingredients[${index}][qty]`}
-        type="number"
-        min={0}
-        placeholder="Qty"
-        value={qty}
-        onChange={(e) => onQuantityChange(ingredient.id, e.target.value)}
-        className="w-20 px-2 py-1 text-sm border rounded"
-      />
-      <input readOnly className='field-sizing-content outline-none pointer-events-none ' type="text" name={`ingredients[${index}][baseUnit]`} value={baseUnit} />
-      <button
-        type="button"
-        onClick={() => onRemove(ingredient.id)}
-        className="text-red-500 hover:text-red-700"
-      >
-        <Trash size={16} className='text-destructive' />
-      </button>
-    </div>
-  </div>
-);
-
-// Main Component
 interface RecipeFormProps {
   onSuccess?: () => void;
+  pantryItems?: PantryItemSelect[];
 }
 
-export const RecipeForm = ({ onSuccess }: RecipeFormProps) => {
+export const RecipeForm = ({ onSuccess, pantryItems }: RecipeFormProps) => {
   const [selectedIngredients, setSelectedIngredients] = useState<
     SelectedIngredient[]
   >([]);
   const [newIngredient, setNewIngredient] = useState('');
   const [availableIngredients, setAvailableIngredients] =
-    useState<RecipeIngredient[]>(MOCK_INGREDIENTS);
-  const [newBaseUnit, setNewBaseUnit] = useState<BaseUnit>('g');
+    useState<PantryItemSelect[]>(pantryItems || []);
+  const [newBaseUnit, setNewBaseUnit] = useState<PantryItemSelect['baseUnit']>('g');
   const [actionState, performAction, isPending] = useActionState<
     RecipeActionResponse,
     FormData
@@ -156,7 +52,8 @@ export const RecipeForm = ({ onSuccess }: RecipeFormProps) => {
     }
   }, [actionState?.success, onSuccess]);
 
-  const handleIngredientToggle = (ingredientId: number) => {
+  const handleIngredientToggle = (ingredientId: string) => {
+
     setSelectedIngredients((prev) => {
       const isSelected = prev.some((ing) => ing.id === ingredientId);
       if (isSelected) {
@@ -167,7 +64,7 @@ export const RecipeForm = ({ onSuccess }: RecipeFormProps) => {
     });
   };
 
-  const handleQuantityChange = (ingredientId: number, qty: string) => {
+  const handleQuantityChange = (ingredientId: string, qty: string) => {
     setSelectedIngredients((prev) =>
       prev.map((ing) => (ing.id === ingredientId ? { ...ing, qty } : ing))
     );
@@ -182,16 +79,26 @@ export const RecipeForm = ({ onSuccess }: RecipeFormProps) => {
     ) {
       const newId =
         availableIngredients.length > 0
-          ? Math.max(...availableIngredients.map((i) => i.id)) + 1
-          : 1;
-      const newIngredientObject: RecipeIngredient = {
+          ? (Math.max(...availableIngredients.map((i) => parseInt(i.id))) + 1).toString()
+          : '1';
+      const newIngredientObject: PantryItemSelect = {
         id: newId,
         name: newIngredient.trim(),
+        userId: '',
         baseUnit: newBaseUnit,
+        unitToGrams: null,
+        unitToMl: null,
+        kcalPerBaseUnit: null,
+        defaultPkgQty: null,
+        defaultPkgPrice: null,
+        tags: null,
+        createdAt: new Date(),
+        updatedAt: null,
       }; // Defaulting new ingredients to 'unit'
       setAvailableIngredients((prev) => [...prev, newIngredientObject]);
-      handleIngredientToggle(newId);
       setNewIngredient('');
+    } else {
+      toast.error('Ingredient name cannot be empty or already exists.');
     }
   };
 
@@ -219,22 +126,22 @@ export const RecipeForm = ({ onSuccess }: RecipeFormProps) => {
       )}
       < div >
         <label
-          htmlFor="description"
+          htmlFor="notes"
           className="block text-sm font-medium text-gray-700 dark:text-gray-300"
         >
-          Description
+          Recipe Notes
         </label>
         < textarea
-          name="description"
-          id="description"
+          name="notes"
+          id="notes"
           className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
           rows={3}
           required
         />
       </div>
-      {actionState.errors?.description && (
+      {actionState.errors?.notes && (
         <div className="mt-2 text-sm text-destructive">
-          {actionState.errors.description.join(', ')}
+          {actionState.errors.notes.join(', ')}
         </div>
       )}
       < div >
@@ -250,7 +157,7 @@ export const RecipeForm = ({ onSuccess }: RecipeFormProps) => {
             }))}
             selected=""
             onSelect={(value) => {
-              const ingredientId = parseInt(value);
+              const ingredientId = String(value);
               handleIngredientToggle(ingredientId);
             }}
             placeholder="Search ingredients..."
@@ -262,11 +169,12 @@ export const RecipeForm = ({ onSuccess }: RecipeFormProps) => {
             {
               selectedIngredients.map((selection, index) => {
                 const ingredient = availableIngredients.find(
-                  (ing: RecipeIngredient) => ing.id === selection.id
+                  (ing: PantryItemSelect) => ing.id === selection.id
                 );
                 if (!ingredient) return null;
                 return (
                   <IngredientItem
+                    pantryItemId={ingredient.id ?? ''}
                     baseUnit={ingredient.baseUnit}
                     name={ingredient.name}
                     key={ingredient.id}
@@ -295,7 +203,7 @@ export const RecipeForm = ({ onSuccess }: RecipeFormProps) => {
         setNewIngredient={setNewIngredient}
         newBaseUnit={newBaseUnit}
         setNewBaseUnit={setNewBaseUnit}
-        onAdd={handleAddNewIngredient}
+        onAdd={() => { handleAddNewIngredient() }}
       />
 
       < div className="flex justify-end" >
