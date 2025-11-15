@@ -7,9 +7,9 @@ import { InferSelectModel } from "drizzle-orm";
 type Recipe = InferSelectModel<typeof recipes>;
 type PantryItem = InferSelectModel<typeof pantryItems>
 
-const user = await stackServerApp.getUser();
 
 export default async function RecipesPage() {
+  const user = await stackServerApp.getUser();
   const recipes: Recipe[] = await getRecipes(user ? user.id : "");
   const pantryItems: PantryItem[] = await getPantryItems(user ? user.id : "");
   return (
