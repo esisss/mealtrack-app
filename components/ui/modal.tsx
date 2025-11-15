@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import { createPortal } from "react-dom";
 
 interface ModalProps {
@@ -10,11 +10,7 @@ interface ModalProps {
 }
 
 export function Modal({ children, isOpen, onClose }: ModalProps) {
-  const [isClient, setIsClient] = useState(false);
 
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -36,7 +32,7 @@ export function Modal({ children, isOpen, onClose }: ModalProps) {
     };
   }, [isOpen, onClose]);
 
-  if (!isClient || !isOpen) {
+  if (!isOpen) {
     return null;
   }
 
