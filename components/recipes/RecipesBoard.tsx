@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
@@ -8,8 +7,6 @@ import { RecipeForm } from "@/components/forms/ui/recipe-form";
 import { pantryItems, recipes } from "@/db/schema";
 import { InferSelectModel } from "drizzle-orm";
 import { getPantryItems } from "@/dal/dal";
-
-// Simulate the shape of a recipe
 
 
 

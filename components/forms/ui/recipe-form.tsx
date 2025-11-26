@@ -4,7 +4,7 @@ import { useActionState, useState, useEffect } from 'react';
 import {
   RecipeActionResponse,
   validateAndSendRecipe,
-} from '../actions/recipe-form-action';
+} from '../../../app/actions/recipe-form-action';
 import { LoaderCircleIcon, Trash } from 'lucide-react';
 import { SearchBarSelect } from '@/components/ui/searchbarselect';
 import { toast } from 'react-hot-toast';
@@ -33,10 +33,7 @@ export const RecipeForm = ({ onSuccess, pantryItems }: RecipeFormProps) => {
   const [selectedIngredients, setSelectedIngredients] = useState<
     SelectedIngredient[]
   >([]);
-  const [newIngredient, setNewIngredient] = useState('');
-  const [availableIngredients, setAvailableIngredients] =
-    useState<PantryItemSelect[]>(pantryItems || []);
-  const [newBaseUnit, setNewBaseUnit] = useState<PantryItemSelect['baseUnit']>('g');
+  const [availableIngredients, setAvailableIngredients] = useState<PantryItemSelect[]>(pantryItems || []);
   const [actionState, performAction, isPending] = useActionState<
     RecipeActionResponse,
     FormData
@@ -70,36 +67,32 @@ export const RecipeForm = ({ onSuccess, pantryItems }: RecipeFormProps) => {
     );
   };
 
-  const handleAddNewIngredient = () => {
-    if (
-      newIngredient.trim() !== '' &&
-      !availableIngredients.find(
-        (ing) => ing.name.toLowerCase() === newIngredient.trim().toLowerCase()
-      )
-    ) {
-      const newId =
-        availableIngredients.length > 0
-          ? (Math.max(...availableIngredients.map((i) => parseInt(i.id))) + 1).toString()
-          : '1';
-      const newIngredientObject: PantryItemSelect = {
-        id: newId,
-        name: newIngredient.trim(),
-        userId: '',
-        baseUnit: newBaseUnit,
-        unitToGrams: null,
-        unitToMl: null,
-        kcalPerBaseUnit: null,
-        defaultPkgQty: null,
-        defaultPkgPrice: null,
-        tags: null,
-        createdAt: new Date(),
-        updatedAt: null,
-      }; // Defaulting new ingredients to 'unit'
-      setAvailableIngredients((prev) => [...prev, newIngredientObject]);
-      setNewIngredient('');
-    } else {
+  // Handler for AddNewIngredient component
+  const handleAddNewIngredient = (ingredient: { name: string; baseUnit: PantryItemSelect['baseUnit'] }) => {
+    if (!ingredient.name || availableIngredients.find(ing => ing.name.toLowerCase() === ingredient.name.toLowerCase())) {
       toast.error('Ingredient name cannot be empty or already exists.');
+      return;
     }
+    const newId =
+      availableIngredients.length > 0
+        ? (Math.max(...availableIngredients.map((i, index) => index)) + 1).toString()
+        : '1';
+
+    const newIngredientObject: PantryItemSelect = {
+      id: newId,
+      name: ingredient.name,
+      userId: '',
+      baseUnit: ingredient.baseUnit,
+      unitToGrams: null,
+      unitToMl: null,
+      kcalPerBaseUnit: null,
+      defaultPkgQty: null,
+      defaultPkgPrice: null,
+      tags: null,
+      createdAt: new Date(),
+      updatedAt: null,
+    };
+    setAvailableIngredients((prev) => [...prev, newIngredientObject]);
   };
 
   return (
@@ -198,13 +191,7 @@ export const RecipeForm = ({ onSuccess, pantryItems }: RecipeFormProps) => {
         </div>
       </div>
 
-      <AddNewIngredient
-        newIngredient={newIngredient}
-        setNewIngredient={setNewIngredient}
-        newBaseUnit={newBaseUnit}
-        setNewBaseUnit={setNewBaseUnit}
-        onAdd={() => { handleAddNewIngredient() }}
-      />
+      <AddNewIngredient onAdd={handleAddNewIngredient} />
 
       < div className="flex justify-end" >
         <Button

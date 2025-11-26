@@ -5,7 +5,7 @@ import {
 	addRecipeIngredients,
 	getPantryItems,
 } from '@/dal/dal';
-import { stackServerApp } from '@/stack/server';
+import { getCurrentUser } from '@/lib/auth';
 import { checkArrayIncludesNewArrayBy } from '@/utils/checkArrayIncludesNewArrayBy';
 import { log } from 'console';
 import z from 'zod';
@@ -87,7 +87,7 @@ export const validateAndSendRecipe = async (
 			errors: flattened.fieldErrors as Record<string, string[]>,
 		};
 	}
-	const user = await stackServerApp.getUser();
+	const user = await getCurrentUser();
 	if (!user) {
 		return {
 			success: false,
@@ -99,7 +99,10 @@ export const validateAndSendRecipe = async (
 		pantryItems,
 		ingredientsParsed,
 		'name'
-	);
+	).map((item) => ({
+		...item,
+		userId: user.id,
+	}));
 	if (newPantryItems.length >= 1) {
 		console.log('New ingredient IDs to add to pantry:', newPantryItems);
 		try {
