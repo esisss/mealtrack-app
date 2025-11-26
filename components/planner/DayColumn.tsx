@@ -23,7 +23,7 @@ export function DayColumn({ day, entries, recipes, onAddEntry, onRemoveEntry }: 
     const isToday = new Date().toDateString() === day.toDateString();
 
     return (
-        <div className={cn("flex flex-col gap-4 min-w-[200px]", isToday && "bg-accent/10 rounded-lg p-2")}>
+        <div className={cn("flex flex-col gap-4 min-w-[200px] p-2", isToday && "bg-accent/20 rounded-2xl ")}>
             <div className="text-center">
                 <div className="font-bold uppercase text-sm text-muted-foreground">{dayName}</div>
                 <div className={cn("text-2xl font-bold", isToday && "text-primary")}>{dateNum}</div>
@@ -33,16 +33,12 @@ export function DayColumn({ day, entries, recipes, onAddEntry, onRemoveEntry }: 
                 {MEAL_TYPES.map((type) => {
                     const mealEntries = entries.filter((e) => e.mealType === type);
                     return (
-                        <Card key={type} className="border-dashed">
+                        <Card key={type} className="border-dashed rounded-2xl py-2">
                             <CardHeader className="p-3 pb-0">
-                                <div className="flex justify-between items-center">
+                                <div className="flex justify-between items-center ">
                                     <CardTitle className="text-xs font-medium uppercase text-muted-foreground">
                                         {type}
                                     </CardTitle>
-                                    <RecipeSelector
-                                        recipes={recipes}
-                                        onSelect={(recipe) => onAddEntry(recipe.id, type)}
-                                    />
                                 </div>
                             </CardHeader>
                             <CardContent className="p-3 pt-2 flex flex-col gap-2">
@@ -67,6 +63,10 @@ export function DayColumn({ day, entries, recipes, onAddEntry, onRemoveEntry }: 
                                 {mealEntries.length === 0 && (
                                     <div className="h-8" />
                                 )}
+                                <RecipeSelector
+                                    recipes={recipes}
+                                    onSelect={(recipe) => onAddEntry(recipe.id, type)}
+                                />
                             </CardContent>
                         </Card>
                     );

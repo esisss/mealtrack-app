@@ -99,16 +99,16 @@ export function PlannerBoard({ cycle, entries, recipes }: PlannerBoardProps) {
     };
 
     return (
-        <div className="flex flex-col gap-6 overflow-x-auto pb-4">
+        <div className="flex flex-col justify-center gap-6 overflow-x-auto pb-4 mx-auto ">
             <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold tracking-tight">Weekly Plan</h2>
+                <h2 className="text-2xl font-bold tracking-tight">Week Plan</h2>
                 <div className="text-sm text-muted-foreground">
                     {startDate.toLocaleDateString()} -{' '}
                     {new Date(cycle.endDate).toLocaleDateString()}
                 </div>
             </div>
 
-            <div className="flex gap-4 min-w-max">
+            <div className="flex gap-4 justify-between min-w-max">
                 {days.map((day) => {
                     const dayStr = day.toISOString().split('T')[0];
                     const dayEntries = optimisticEntries.filter((e) => {

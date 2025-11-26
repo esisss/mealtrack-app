@@ -18,7 +18,7 @@ export default async function PlannerPage() {
   const recipes = await getRecipes(user.id);
 
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-2">
       <PlannerBoard
         cycle={currentCycle}
         entries={entries}
