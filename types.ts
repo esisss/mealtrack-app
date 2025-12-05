@@ -19,3 +19,21 @@ export type MealPlanEntrySelect = InferSelectModel<
 export type MealPlanEntryInsert = InferInsertModel<
 	typeof schema.mealPlanEntries
 >;
+export type ShoppingListSelect = InferSelectModel<typeof schema.shoppingLists>;
+export type ShoppingListInsert = InferInsertModel<typeof schema.shoppingLists>;
+export type ShoppingListItemSelect = InferSelectModel<
+	typeof schema.shoppingListItems
+>;
+export type ShoppingListItemInsert = InferInsertModel<
+	typeof schema.shoppingListItems
+>;
+
+// Combined type for displaying grocery items
+export type GroceryListItem = {
+	id: string;
+	pantryItemId: string;
+	ingredientName: string;
+	baseUnit: string;
+	toBuyQty: number;
+	status: 'pending' | 'bought' | 'skipped';
+};

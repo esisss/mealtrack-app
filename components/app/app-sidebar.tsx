@@ -2,7 +2,6 @@ import {
   Calendar,
   CookingPot,
   LayoutDashboard,
-  ListCheck,
   LogOut,
   Refrigerator,
   Settings,
@@ -37,7 +36,6 @@ const items = [
     url: "/planner",
     icon: Calendar,
   },
-  { title: "Groceries", url: "/grocery-list", icon: ListCheck },
   { title: "Pantry", url: "/pantry", icon: Refrigerator },
   { title: "Settings", url: "/settings", icon: Settings },
 ];

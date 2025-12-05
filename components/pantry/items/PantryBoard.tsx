@@ -2,7 +2,7 @@
 
 import { PantryItemInsert, PantryItemSelect } from "@/types"
 import { startTransition, useOptimistic, } from "react"
-import { AddNewIngredient } from "../forms/ui/addNewIngredientInput"
+import { AddNewIngredient } from "../../forms/ui/addNewIngredientInput"
 import { addNewPantryItemsAction } from "@/app/actions/pantryactions"
 
 export const PantryBoard = ({ pantryItems }: { pantryItems: PantryItemSelect[] }) => {
