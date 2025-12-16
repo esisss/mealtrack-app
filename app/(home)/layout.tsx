@@ -1,4 +1,4 @@
-import { Navbar } from "@/components/ui/navbar";
+import { Navbar } from "@/components/home/navbar";
 import { GitHubLogoIcon, LinkedInLogoIcon } from "@radix-ui/react-icons";
 import Link from "next/link";
 

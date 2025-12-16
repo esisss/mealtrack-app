@@ -1,0 +1,43 @@
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { getCurrentUser } from './lib/auth';
+
+export async function proxy(request: NextRequest) {
+	const user = await getCurrentUser();
+	const { pathname } = request.nextUrl;
+	const loggedOffRoutes = ['/handler/sign-in', '/handler/sign-up', '/'];
+	const loggedInRoutes = [
+		'/dashboard',
+		'/grocery-list',
+		'/pantry',
+		'/planner',
+		'/recipes',
+		'/settings',
+	];
+
+	if (user && loggedOffRoutes.includes(pathname)) {
+		console.log('User is logged in');
+		return NextResponse.redirect(new URL('/dashboard', request.url));
+	}
+
+	if (!user && loggedInRoutes.includes(pathname)) {
+		console.log('User is not logged in');
+		return NextResponse.redirect(new URL('/handler/sign-in', request.url));
+	}
+
+	return NextResponse.next();
+}
+
+export const config = {
+	matcher: [
+		'/',
+		'/dashboard',
+		'/grocery-list',
+		'/pantry',
+		'/planner',
+		'/recipes',
+		'/settings',
+		'/handler/sign-in',
+		'/handler/sign-up',
+	],
+};

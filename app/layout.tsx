@@ -51,6 +51,7 @@ export default function RootLayout({
                 }}
               />
               {children}
+              <div id="modal-root" />
             </ThemeProvider>
           </StackTheme>
         </StackProvider>
