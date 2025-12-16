@@ -17,6 +17,8 @@ import {
 	ShoppingListInsert,
 	ShoppingListItemInsert,
 	GroceryListItem,
+	StockItem,
+	StockLotInsert,
 } from '@/types';
 import { neon } from '@neondatabase/serverless';
 import {
@@ -70,9 +72,9 @@ export const addRecipeIngredients = async (items: RecipeIngredientInsert[]) => {
 
 // Meal Cycle DAL functions
 export async function getOrCreateCurrentCycle(userId: string, date: Date) {
-	const startOfWeek = new Date(date);
+	const startOfWeek = date ?? new Date();
 	const day = startOfWeek.getDay();
-	const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+	const diff = startOfWeek.getDate() - day + 1;
 	startOfWeek.setDate(diff);
 	startOfWeek.setHours(0, 0, 0, 0);
 
@@ -471,4 +473,348 @@ export async function updateShoppingListItemStatus(
 		.set({ status })
 		.where(eq(shoppingListItems.id, itemId))
 		.returning();
+}
+
+/**
+ * Get a shopping list item by ID
+ */
+export async function getShoppingListItemById(itemId: string) {
+	const result = await db
+		.select()
+		.from(shoppingListItems)
+		.where(eq(shoppingListItems.id, itemId))
+		.limit(1);
+
+	return result[0] || null;
+}
+
+/**
+ * Delete all shopping list items for a given list
+ */
+export async function deleteShoppingListItems(listId: string) {
+	try {
+		console.log('[deleteShoppingListItems] Deleting items for list:', listId);
+
+		const deleted = await db
+			.delete(shoppingListItems)
+			.where(eq(shoppingListItems.listId, listId))
+			.returning();
+
+		console.log('[deleteShoppingListItems] Deleted items:', deleted.length);
+		return deleted;
+	} catch (error) {
+		console.error('[deleteShoppingListItems] Error:', error);
+		throw error;
+	}
+}
+
+/**
+ * Update the shopping list for a cycle
+ * This recalculates the grocery needs based on the current meal plan
+ * and updates the shopping list accordingly
+ */
+export async function updateShoppingListForCycle(
+	cycleId: string,
+	userId: string
+) {
+	try {
+		console.log('[updateShoppingListForCycle] Starting update for:', {
+			cycleId,
+			userId,
+		});
+
+		// Get or create the shopping list
+		const shoppingList = await getOrCreateShoppingListForCycle(cycleId, userId);
+		console.log(
+			'[updateShoppingListForCycle] Shopping list ID:',
+			shoppingList.id
+		);
+
+		// Fetch existing items with their statuses BEFORE deletion
+		const existingItems = await db
+			.select({
+				pantryItemId: shoppingListItems.pantryItemId,
+				status: shoppingListItems.status,
+				toBuyQty: shoppingListItems.toBuyQty,
+			})
+			.from(shoppingListItems)
+			.where(eq(shoppingListItems.listId, shoppingList.id));
+
+		console.log(
+			'[updateShoppingListForCycle] Existing items before deletion:',
+			existingItems.length
+		);
+
+		// Create a map for quick lookup: pantryItemId -> { status, toBuyQty }
+		const statusMap = new Map(
+			existingItems.map((item) => [
+				item.pantryItemId,
+				{
+					status: item.status,
+					previousToBuyQty: parseFloat(item.toBuyQty || '0'),
+				},
+			])
+		);
+
+		// Delete all existing items (full recalculation approach)
+		await deleteShoppingListItems(shoppingList.id);
+
+		// Get fresh grocery list based on current meal plan
+		const groceryItems = await getGroceryListForCycle(cycleId, userId);
+		console.log(
+			'[updateShoppingListForCycle] Calculated grocery items:',
+			groceryItems.length
+		);
+
+		// Insert new items
+		if (groceryItems.length > 0) {
+			const itemsToInsert = groceryItems.map((item) => {
+				// Get previous status and quantity
+				const previousData = statusMap.get(item.pantryItemId!);
+				const previousStatus = previousData?.status;
+				const previousToBuyQty = previousData?.previousToBuyQty || 0;
+				const currentToBuyQty = item.toBuy;
+
+				// Determine status:
+				// - If item is new (no previous status), default to 'pending'
+				// - If item was 'bought' but quantity increased, reset to 'pending'
+				// - Otherwise, preserve previous status
+				let status: 'pending' | 'bought' | 'skipped' = 'pending';
+
+				if (previousStatus) {
+					if (
+						previousStatus === 'bought' &&
+						currentToBuyQty > previousToBuyQty
+					) {
+						// Quantity increased, reset to pending
+						status = 'pending';
+						console.log(
+							`[updateShoppingListForCycle] Item ${item.ingredientName}: quantity increased from ${previousToBuyQty} to ${currentToBuyQty}, resetting to pending`
+						);
+					} else {
+						// Preserve previous status
+						status = previousStatus as 'pending' | 'bought' | 'skipped';
+					}
+				}
+
+				console.log(
+					`[updateShoppingListForCycle] Item ${item.ingredientName}: status=${status} (previous=${previousStatus}, prevQty=${previousToBuyQty}, newQty=${currentToBuyQty})`
+				);
+
+				return {
+					listId: shoppingList.id,
+					pantryItemId: item.pantryItemId!,
+					requiredQty: item.totalRequired.toString(),
+					onHandQty: item.inStock.toString(),
+					toBuyQty: item.toBuy.toString(),
+					status: status,
+				};
+			});
+
+			console.log(
+				'[updateShoppingListForCycle] Inserting items:',
+				itemsToInsert.length
+			);
+
+			const inserted = await db
+				.insert(shoppingListItems)
+				.values(itemsToInsert)
+				.returning();
+
+			console.log(
+				'[updateShoppingListForCycle] Items inserted:',
+				inserted.length
+			);
+
+			return {
+				listId: shoppingList.id,
+				itemsCount: inserted.length,
+				items: inserted,
+			};
+		}
+
+		console.log('[updateShoppingListForCycle] No items to insert');
+		return {
+			listId: shoppingList.id,
+			itemsCount: 0,
+			items: [],
+		};
+	} catch (error) {
+		console.error('[updateShoppingListForCycle] Error:', error);
+		throw error;
+	}
+}
+
+// ============================================
+// STOCK MANAGEMENT FUNCTIONS
+// ============================================
+
+/**
+ * Get current stock with enhanced details including expiry dates
+ */
+export async function getCurrentStockWithDetails(
+	userId: string
+): Promise<StockItem[]> {
+	try {
+		console.log('[getCurrentStockWithDetails] Starting with userId:', userId);
+
+		const result = await db
+			.select({
+				pantryItemId: pantryItems.id,
+				ingredientName: pantryItems.name,
+				baseUnit: pantryItems.baseUnit,
+				totalInStock: sqlAgg<string>`
+					COALESCE(SUM(CAST(${stockLots.qtyRemaining} AS NUMERIC)), 0)
+				`.as('total_in_stock'),
+				lotCount: sqlAgg<number>`COUNT(${stockLots.id})`.as('lot_count'),
+				earliestExpiry: sqlAgg<Date | null>`MIN(${stockLots.expiresAt})`.as(
+					'earliest_expiry'
+				),
+			})
+			.from(stockLots)
+			.leftJoin(pantryItems, eq(stockLots.pantryItemId, pantryItems.id))
+			.where(eq(stockLots.userId, userId))
+			.groupBy(pantryItems.id, pantryItems.name, pantryItems.baseUnit);
+
+		console.log('[getCurrentStockWithDetails] Raw result:', result);
+
+		const stockItems = result
+			.filter((item) => item.pantryItemId !== null)
+			.map((item) => ({
+				pantryItemId: item.pantryItemId!,
+				ingredientName: item.ingredientName!,
+				baseUnit: item.baseUnit!,
+				totalInStock: parseFloat(item.totalInStock || '0'),
+				lotCount: item.lotCount,
+				earliestExpiry: item.earliestExpiry,
+			}));
+
+		console.log('[getCurrentStockWithDetails] Stock items:', stockItems);
+
+		return stockItems;
+	} catch (error) {
+		console.error('[getCurrentStockWithDetails] Error:', error);
+		throw error;
+	}
+}
+
+/**
+ * Add a new stock lot
+ */
+export async function addStockLot(
+	userId: string,
+	pantryItemId: string,
+	quantity: number,
+	expiresAt?: Date
+) {
+	try {
+		console.log('[addStockLot] Adding stock:', {
+			userId,
+			pantryItemId,
+			quantity,
+			expiresAt,
+		});
+
+		const newLot = await db
+			.insert(stockLots)
+			.values({
+				userId,
+				pantryItemId,
+				qtyInitial: quantity.toString(),
+				qtyRemaining: quantity.toString(),
+				expiresAt: expiresAt?.toISOString(),
+			})
+			.returning();
+
+		console.log('[addStockLot] Stock lot added:', newLot[0].id);
+
+		return newLot[0];
+	} catch (error) {
+		console.error('[addStockLot] Error:', error);
+		throw error;
+	}
+}
+
+/**
+ * Adjust the remaining quantity of a stock lot
+ */
+export async function adjustStockQuantity(lotId: string, newQuantity: number) {
+	try {
+		console.log('[adjustStockQuantity] Adjusting:', { lotId, newQuantity });
+
+		const updated = await db
+			.update(stockLots)
+			.set({ qtyRemaining: newQuantity.toString() })
+			.where(eq(stockLots.id, lotId))
+			.returning();
+
+		console.log('[adjustStockQuantity] Updated:', updated[0].id);
+
+		return updated[0];
+	} catch (error) {
+		console.error('[adjustStockQuantity] Error:', error);
+		throw error;
+	}
+}
+
+/**
+ * Get all stock lots for a specific pantry item
+ */
+export async function getStockLotsByItem(userId: string, pantryItemId: string) {
+	try {
+		console.log('[getStockLotsByItem] Getting lots:', {
+			userId,
+			pantryItemId,
+		});
+
+		const lots = await db
+			.select()
+			.from(stockLots)
+			.where(
+				and(
+					eq(stockLots.userId, userId),
+					eq(stockLots.pantryItemId, pantryItemId)
+				)
+			)
+			.orderBy(stockLots.acquiredAt);
+
+		console.log('[getStockLotsByItem] Found lots:', lots.length);
+
+		return lots;
+	} catch (error) {
+		console.error('[getStockLotsByItem] Error:', error);
+		throw error;
+	}
+}
+
+/**
+ * Delete all stock lots for a specific pantry item
+ */
+export async function deleteStockLotsByItem(
+	userId: string,
+	pantryItemId: string
+) {
+	try {
+		console.log('[deleteStockLotsByItem] Deleting lots for:', {
+			userId,
+			pantryItemId,
+		});
+
+		const deleted = await db
+			.delete(stockLots)
+			.where(
+				and(
+					eq(stockLots.userId, userId),
+					eq(stockLots.pantryItemId, pantryItemId)
+				)
+			)
+			.returning();
+
+		console.log('[deleteStockLotsByItem] Deleted lots:', deleted.length);
+
+		return deleted;
+	} catch (error) {
+		console.error('[deleteStockLotsByItem] Error:', error);
+		throw error;
+	}
 }

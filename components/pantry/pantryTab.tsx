@@ -1,15 +1,18 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PantryBoard } from "./items/PantryBoard"
 import { GroceryBoard } from "./grocery/GroceryBoard"
-import { GroceryListItem, PantryItemSelect } from "@/types"
+import { StockBoard } from "./stock/StockBoard"
+import { GroceryListItem, PantryItemSelect, StockItem } from "@/types"
 
 export const PantryTab = ({
     items,
     groceryItems,
+    stockItems,
     cycleId
 }: {
     items: PantryItemSelect[],
     groceryItems: GroceryListItem[],
+    stockItems: StockItem[],
     cycleId: string
 }) => {
     return (
@@ -23,7 +26,7 @@ export const PantryTab = ({
                 <GroceryBoard groceryItems={groceryItems} cycleId={cycleId} />
             </TabsContent>
             <TabsContent className="w-full flex items-center justify-center" value="stock">
-                <PantryBoard pantryItems={items} />
+                <StockBoard stockItems={stockItems} pantryItems={items} cycleId={cycleId} />
             </TabsContent>
             <TabsContent className="w-full flex items-center justify-center" value="items">
                 <PantryBoard pantryItems={items} />

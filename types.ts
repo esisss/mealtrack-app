@@ -37,3 +37,17 @@ export type GroceryListItem = {
 	toBuyQty: number;
 	status: 'pending' | 'bought' | 'skipped';
 };
+
+// Stock lot types
+export type StockLotSelect = InferSelectModel<typeof schema.stockLots>;
+export type StockLotInsert = InferInsertModel<typeof schema.stockLots>;
+
+// Combined type for displaying stock items
+export type StockItem = {
+	pantryItemId: string;
+	ingredientName: string;
+	baseUnit: string;
+	totalInStock: number;
+	lotCount: number;
+	earliestExpiry?: Date | null;
+};

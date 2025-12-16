@@ -10,6 +10,7 @@ interface PlannerBoardProps {
     cycle: MealCycleSelect;
     entries: (MealPlanEntrySelect & { recipeName: string | null })[];
     recipes: RecipeSelect[];
+    userId: string;
 }
 
 type OptimisticEntry = MealPlanEntrySelect & { recipeName: string | null };
@@ -18,7 +19,7 @@ type OptimisticAction =
     | { type: 'add'; entry: OptimisticEntry }
     | { type: 'remove'; entryId: string };
 
-export function PlannerBoard({ cycle, entries, recipes }: PlannerBoardProps) {
+export function PlannerBoard({ cycle, entries, recipes, userId }: PlannerBoardProps) {
     const startDate = new Date(cycle.startDate);
 
     // useOptimistic for instant UI updates
@@ -71,7 +72,7 @@ export function PlannerBoard({ cycle, entries, recipes }: PlannerBoardProps) {
                     mealType,
                     recipeId,
                     servings: '1',
-                });
+                }, userId);
                 toast.success('Entry added successfully');
 
             } catch (error) {
@@ -88,7 +89,7 @@ export function PlannerBoard({ cycle, entries, recipes }: PlannerBoardProps) {
             addOptimisticUpdate({ type: 'remove', entryId });
 
             try {
-                await removeMealPlanEntryAction(entryId);
+                await removeMealPlanEntryAction(entryId, cycle.id, userId);
                 toast.success('Entry removed successfully');
             } catch (error) {
                 console.error('Failed to remove entry', error);

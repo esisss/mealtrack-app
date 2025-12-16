@@ -23,6 +23,7 @@ export default async function PlannerPage() {
         cycle={currentCycle}
         entries={entries}
         recipes={recipes}
+        userId={user.id}
       />
     </div>
   );

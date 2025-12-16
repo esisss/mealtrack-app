@@ -1,11 +1,15 @@
 "use client"
 
 import { GroceryListItem } from "@/types"
-import { startTransition, useOptimistic } from "react"
+import { startTransition, useOptimistic, useState } from "react"
 import { toggleGroceryItemStatusAction } from "@/app/actions/groceryactions"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
 
 export const GroceryBoard = ({ groceryItems, cycleId }: { groceryItems: GroceryListItem[], cycleId: string }) => {
+    const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+    const [itemToUncheck, setItemToUncheck] = useState<GroceryListItem | null>(null);
 
     const [optimisticGroceryItems, updateOptimisticItem] = useOptimistic(
         groceryItems,
@@ -16,7 +20,7 @@ export const GroceryBoard = ({ groceryItems, cycleId }: { groceryItems: GroceryL
         }
     );
 
-    const handleToggle = async (item: GroceryListItem) => {
+    const handleToggle = async (item: GroceryListItem, removeFromStock?: boolean) => {
         const newStatus = item.status === 'bought' ? 'pending' : 'bought';
         const optimisticItem = { ...item, status: newStatus as 'pending' | 'bought' | 'skipped' };
 
@@ -24,11 +28,30 @@ export const GroceryBoard = ({ groceryItems, cycleId }: { groceryItems: GroceryL
             updateOptimisticItem(optimisticItem);
         });
 
-        const result = await toggleGroceryItemStatusAction(item.id, item.status);
+        const result = await toggleGroceryItemStatusAction(item.id, item.status, removeFromStock);
 
         if (!result.success) {
             console.error('Failed to update item status:', result.message);
         }
+    };
+
+    const handleCheckboxChange = (item: GroceryListItem) => {
+        // If unchecking a bought item, show confirmation dialog
+        if (item.status === 'bought') {
+            setItemToUncheck(item);
+            setConfirmDialogOpen(true);
+        } else {
+            // If checking (marking as bought), just toggle
+            handleToggle(item);
+        }
+    };
+
+    const handleConfirmUncheck = async (removeFromStock: boolean) => {
+        if (!itemToUncheck) return;
+
+        await handleToggle(itemToUncheck, removeFromStock);
+        setConfirmDialogOpen(false);
+        setItemToUncheck(null);
     };
 
     // Separate items by status
@@ -65,7 +88,7 @@ export const GroceryBoard = ({ groceryItems, cycleId }: { groceryItems: GroceryL
                                     >
                                         <Checkbox
                                             checked={false}
-                                            onCheckedChange={() => handleToggle(item)}
+                                            onCheckedChange={() => handleCheckboxChange(item)}
                                         />
                                         <div className="flex-1">
                                             <p className="font-medium">{item.ingredientName}</p>
@@ -93,7 +116,7 @@ export const GroceryBoard = ({ groceryItems, cycleId }: { groceryItems: GroceryL
                                     >
                                         <Checkbox
                                             checked={true}
-                                            onCheckedChange={() => handleToggle(item)}
+                                            onCheckedChange={() => handleCheckboxChange(item)}
                                         />
                                         <div className="flex-1 opacity-60">
                                             <p className="font-medium line-through">{item.ingredientName}</p>
@@ -108,6 +131,34 @@ export const GroceryBoard = ({ groceryItems, cycleId }: { groceryItems: GroceryL
                     )}
                 </div>
             )}
+
+            {/* Uncheck Confirmation Dialog */}
+            <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Remove from Stock?</DialogTitle>
+                        <DialogDescription>
+                            Do you want to remove &ldquo;{itemToUncheck?.ingredientName}&rdquo; from your stock as well?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="flex-col sm:flex-row gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => handleConfirmUncheck(false)}
+                            className="w-full sm:w-auto"
+                        >
+                            Keep in Stock
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={() => handleConfirmUncheck(true)}
+                            className="w-full sm:w-auto"
+                        >
+                            Remove from Stock
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

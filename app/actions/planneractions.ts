@@ -4,6 +4,7 @@ import {
 	getOrCreateCurrentCycle,
 	addMealPlanEntry,
 	removeMealPlanEntry,
+	updateShoppingListForCycle,
 } from '@/dal/dal';
 import { MealCycleInsert, MealCycleSelect, MealPlanEntryInsert } from '@/types';
 import { revalidatePath } from 'next/cache';
@@ -38,18 +39,29 @@ export const getOrCreateCycle = async (
 	);
 };
 export const addMealPlanEntryAction = async (
-	entry: MealPlanEntryInsert
+	entry: MealPlanEntryInsert,
+	userId: string
 ): Promise<ActionResponse<MealPlanEntryInsert>> => {
 	return actionWrapper(async () => {
 		const result = await addMealPlanEntry(entry);
+
+		// Update the shopping list to reflect the new meal plan entry
+		await updateShoppingListForCycle(entry.cycleId, userId);
+
 		return result[0];
-	}, ['/dashboard/planner']);
+	}, ['/dashboard/planner', '/pantry']);
 };
 export const removeMealPlanEntryAction = async (
-	entryId: string
+	entryId: string,
+	cycleId: string,
+	userId: string
 ): Promise<ActionResponse> => {
 	return actionWrapper(async () => {
 		await removeMealPlanEntry(entryId);
+
+		// Update the shopping list to reflect the removed meal plan entry
+		await updateShoppingListForCycle(cycleId, userId);
+
 		return undefined;
-	}, ['/dashboard/planner']);
+	}, ['/dashboard/planner', '/pantry']);
 };
