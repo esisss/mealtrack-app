@@ -335,11 +335,6 @@ export async function getOrCreateShoppingListForCycle(
 	userId: string
 ) {
 	try {
-		console.log('[getOrCreateShoppingListForCycle] Starting with:', {
-			cycleId,
-			userId,
-		});
-
 		// Check if a shopping list already exists for this cycle
 		const existingList = await db
 			.select()
@@ -348,14 +343,8 @@ export async function getOrCreateShoppingListForCycle(
 			.limit(1);
 
 		if (existingList.length > 0) {
-			console.log(
-				'[getOrCreateShoppingListForCycle] Found existing list:',
-				existingList[0].id
-			);
 			return existingList[0];
 		}
-
-		console.log('[getOrCreateShoppingListForCycle] Creating new list...');
 
 		// Create a new shopping list
 		const newList = await db
@@ -363,19 +352,8 @@ export async function getOrCreateShoppingListForCycle(
 			.values({ cycleId })
 			.returning();
 
-		console.log(
-			'[getOrCreateShoppingListForCycle] New list created:',
-			newList[0].id
-		);
-
 		// Get the grocery list items
 		const groceryItems = await getGroceryListForCycle(cycleId, userId);
-
-		console.log(
-			'[getOrCreateShoppingListForCycle] Grocery items calculated:',
-			groceryItems.length,
-			groceryItems
-		);
 
 		// Insert shopping list items
 		if (groceryItems.length > 0) {
@@ -388,22 +366,10 @@ export async function getOrCreateShoppingListForCycle(
 				status: 'pending' as const,
 			}));
 
-			console.log(
-				'[getOrCreateShoppingListForCycle] Inserting items:',
-				itemsToInsert
-			);
-
 			const insertedItems = await db
 				.insert(shoppingListItems)
 				.values(itemsToInsert)
 				.returning();
-
-			console.log(
-				'[getOrCreateShoppingListForCycle] Items inserted:',
-				insertedItems.length
-			);
-		} else {
-			console.log('[getOrCreateShoppingListForCycle] No items to insert');
 		}
 
 		return newList[0];
@@ -420,8 +386,6 @@ export async function getShoppingListWithItems(
 	cycleId: string
 ): Promise<GroceryListItem[]> {
 	try {
-		console.log('[getShoppingListWithItems] Starting with cycleId:', cycleId);
-
 		const result = await db
 			.select({
 				id: shoppingListItems.id,
@@ -439,8 +403,6 @@ export async function getShoppingListWithItems(
 			.leftJoin(pantryItems, eq(shoppingListItems.pantryItemId, pantryItems.id))
 			.where(eq(shoppingLists.cycleId, cycleId));
 
-		console.log('[getShoppingListWithItems] Raw result:', result);
-
 		const filteredResult = result
 			.filter((item) => item.id !== null)
 			.map((item) => ({
@@ -451,8 +413,6 @@ export async function getShoppingListWithItems(
 				toBuyQty: parseFloat(item.toBuyQty || '0'),
 				status: item.status!,
 			}));
-
-		console.log('[getShoppingListWithItems] Filtered result:', filteredResult);
 
 		return filteredResult;
 	} catch (error) {
@@ -493,14 +453,11 @@ export async function getShoppingListItemById(itemId: string) {
  */
 export async function deleteShoppingListItems(listId: string) {
 	try {
-		console.log('[deleteShoppingListItems] Deleting items for list:', listId);
-
 		const deleted = await db
 			.delete(shoppingListItems)
 			.where(eq(shoppingListItems.listId, listId))
 			.returning();
 
-		console.log('[deleteShoppingListItems] Deleted items:', deleted.length);
 		return deleted;
 	} catch (error) {
 		console.error('[deleteShoppingListItems] Error:', error);
@@ -518,39 +475,23 @@ export async function updateShoppingListForCycle(
 	userId: string
 ) {
 	try {
-		console.log('[updateShoppingListForCycle] Starting update for:', {
-			cycleId,
-			userId,
-		});
-
 		// Get or create the shopping list
 		const shoppingList = await getOrCreateShoppingListForCycle(cycleId, userId);
-		console.log(
-			'[updateShoppingListForCycle] Shopping list ID:',
-			shoppingList.id
-		);
 
-		// Fetch existing items with their statuses BEFORE deletion
+		// Fetch existing items
 		const existingItems = await db
 			.select({
 				pantryItemId: shoppingListItems.pantryItemId,
-				status: shoppingListItems.status,
 				toBuyQty: shoppingListItems.toBuyQty,
 			})
 			.from(shoppingListItems)
 			.where(eq(shoppingListItems.listId, shoppingList.id));
 
-		console.log(
-			'[updateShoppingListForCycle] Existing items before deletion:',
-			existingItems.length
-		);
-
-		// Create a map for quick lookup: pantryItemId -> { status, toBuyQty }
+		// Create a map for quick lookup: pantryItemId -> { previousToBuyQty }
 		const statusMap = new Map(
 			existingItems.map((item) => [
 				item.pantryItemId,
 				{
-					status: item.status,
 					previousToBuyQty: parseFloat(item.toBuyQty || '0'),
 				},
 			])
@@ -561,17 +502,12 @@ export async function updateShoppingListForCycle(
 
 		// Get fresh grocery list based on current meal plan
 		const groceryItems = await getGroceryListForCycle(cycleId, userId);
-		console.log(
-			'[updateShoppingListForCycle] Calculated grocery items:',
-			groceryItems.length
-		);
 
 		// Insert new items
 		if (groceryItems.length > 0) {
 			const itemsToInsert = groceryItems.map((item) => {
 				// Get previous status and quantity
 				const previousData = statusMap.get(item.pantryItemId!);
-				const previousStatus = previousData?.status;
 				const previousToBuyQty = previousData?.previousToBuyQty || 0;
 				const currentToBuyQty = item.toBuy;
 
@@ -581,25 +517,12 @@ export async function updateShoppingListForCycle(
 				// - Otherwise, preserve previous status
 				let status: 'pending' | 'bought' | 'skipped' = 'pending';
 
-				if (previousStatus) {
-					if (
-						previousStatus === 'bought' &&
-						currentToBuyQty > previousToBuyQty
-					) {
+				if (previousToBuyQty) {
+					if (currentToBuyQty > previousToBuyQty) {
 						// Quantity increased, reset to pending
 						status = 'pending';
-						console.log(
-							`[updateShoppingListForCycle] Item ${item.ingredientName}: quantity increased from ${previousToBuyQty} to ${currentToBuyQty}, resetting to pending`
-						);
-					} else {
-						// Preserve previous status
-						status = previousStatus as 'pending' | 'bought' | 'skipped';
 					}
 				}
-
-				console.log(
-					`[updateShoppingListForCycle] Item ${item.ingredientName}: status=${status} (previous=${previousStatus}, prevQty=${previousToBuyQty}, newQty=${currentToBuyQty})`
-				);
 
 				return {
 					listId: shoppingList.id,
@@ -611,20 +534,10 @@ export async function updateShoppingListForCycle(
 				};
 			});
 
-			console.log(
-				'[updateShoppingListForCycle] Inserting items:',
-				itemsToInsert.length
-			);
-
 			const inserted = await db
 				.insert(shoppingListItems)
 				.values(itemsToInsert)
 				.returning();
-
-			console.log(
-				'[updateShoppingListForCycle] Items inserted:',
-				inserted.length
-			);
 
 			return {
 				listId: shoppingList.id,
@@ -633,7 +546,6 @@ export async function updateShoppingListForCycle(
 			};
 		}
 
-		console.log('[updateShoppingListForCycle] No items to insert');
 		return {
 			listId: shoppingList.id,
 			itemsCount: 0,
@@ -656,8 +568,6 @@ export async function getCurrentStockWithDetails(
 	userId: string
 ): Promise<StockItem[]> {
 	try {
-		console.log('[getCurrentStockWithDetails] Starting with userId:', userId);
-
 		const result = await db
 			.select({
 				pantryItemId: pantryItems.id,
@@ -676,8 +586,6 @@ export async function getCurrentStockWithDetails(
 			.where(eq(stockLots.userId, userId))
 			.groupBy(pantryItems.id, pantryItems.name, pantryItems.baseUnit);
 
-		console.log('[getCurrentStockWithDetails] Raw result:', result);
-
 		const stockItems = result
 			.filter((item) => item.pantryItemId !== null)
 			.map((item) => ({
@@ -688,8 +596,6 @@ export async function getCurrentStockWithDetails(
 				lotCount: item.lotCount,
 				earliestExpiry: item.earliestExpiry,
 			}));
-
-		console.log('[getCurrentStockWithDetails] Stock items:', stockItems);
 
 		return stockItems;
 	} catch (error) {
@@ -708,13 +614,6 @@ export async function addStockLot(
 	expiresAt?: Date
 ) {
 	try {
-		console.log('[addStockLot] Adding stock:', {
-			userId,
-			pantryItemId,
-			quantity,
-			expiresAt,
-		});
-
 		const newLot = await db
 			.insert(stockLots)
 			.values({
@@ -725,8 +624,6 @@ export async function addStockLot(
 				expiresAt: expiresAt?.toISOString(),
 			})
 			.returning();
-
-		console.log('[addStockLot] Stock lot added:', newLot[0].id);
 
 		return newLot[0];
 	} catch (error) {
@@ -740,15 +637,11 @@ export async function addStockLot(
  */
 export async function adjustStockQuantity(lotId: string, newQuantity: number) {
 	try {
-		console.log('[adjustStockQuantity] Adjusting:', { lotId, newQuantity });
-
 		const updated = await db
 			.update(stockLots)
 			.set({ qtyRemaining: newQuantity.toString() })
 			.where(eq(stockLots.id, lotId))
 			.returning();
-
-		console.log('[adjustStockQuantity] Updated:', updated[0].id);
 
 		return updated[0];
 	} catch (error) {
@@ -762,11 +655,6 @@ export async function adjustStockQuantity(lotId: string, newQuantity: number) {
  */
 export async function getStockLotsByItem(userId: string, pantryItemId: string) {
 	try {
-		console.log('[getStockLotsByItem] Getting lots:', {
-			userId,
-			pantryItemId,
-		});
-
 		const lots = await db
 			.select()
 			.from(stockLots)
@@ -777,8 +665,6 @@ export async function getStockLotsByItem(userId: string, pantryItemId: string) {
 				)
 			)
 			.orderBy(stockLots.acquiredAt);
-
-		console.log('[getStockLotsByItem] Found lots:', lots.length);
 
 		return lots;
 	} catch (error) {
@@ -795,11 +681,6 @@ export async function deleteStockLotsByItem(
 	pantryItemId: string
 ) {
 	try {
-		console.log('[deleteStockLotsByItem] Deleting lots for:', {
-			userId,
-			pantryItemId,
-		});
-
 		const deleted = await db
 			.delete(stockLots)
 			.where(
@@ -809,8 +690,6 @@ export async function deleteStockLotsByItem(
 				)
 			)
 			.returning();
-
-		console.log('[deleteStockLotsByItem] Deleted lots:', deleted.length);
 
 		return deleted;
 	} catch (error) {
