@@ -37,6 +37,7 @@ export const GroceryBoard = ({ groceryItems, cycleId }: { groceryItems: GroceryL
 
     const handleCheckboxChange = (item: GroceryListItem) => {
         // If unchecking a bought item, show confirmation dialog
+        console.log(item)
         if (item.status === 'bought') {
             setItemToUncheck(item);
             setConfirmDialogOpen(true);

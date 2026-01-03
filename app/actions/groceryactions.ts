@@ -6,6 +6,7 @@ import {
 	updateShoppingListItemStatus,
 	addStockLot,
 	getShoppingListItemById,
+	getStockLotByItemId,
 } from '@/dal/dal';
 import { getCurrentUser } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
@@ -83,6 +84,7 @@ export async function toggleGroceryItemStatusAction(
 
 		// Get the shopping list item details
 		const item = await getShoppingListItemById(itemId);
+		const lot = await getStockLotByItemId(item.pantryItemId);
 		if (!item) {
 			return {
 				success: false,
@@ -108,10 +110,10 @@ export async function toggleGroceryItemStatusAction(
 			newStatus === 'pending' &&
 			removeFromStock
 		) {
-			const { deleteStockLotsByItem } = await import('@/dal/dal');
-			await deleteStockLotsByItem(user.id, item.pantryItemId);
+			const { deleteStockLotByLotId } = await import('@/dal/dal');
+			await deleteStockLotByLotId(lot.id);
 			console.log(
-				`[toggleGroceryItemStatusAction] Removed stock for item ${item.pantryItemId}`
+				`[toggleGroceryItemStatusAction] Removed stock lot for id ${lot.id}`
 			);
 		}
 

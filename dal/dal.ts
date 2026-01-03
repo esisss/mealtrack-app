@@ -673,6 +673,22 @@ export async function getStockLotsByItem(userId: string, pantryItemId: string) {
 	}
 }
 
+// Get lot id by by pantry item
+
+export async function getStockLotByItemId(pantryItemId: string) {
+	try {
+		const lot = await db
+			.select()
+			.from(stockLots)
+			.where(eq(stockLots.pantryItemId, pantryItemId))
+			.limit(1);
+		return lot[0];
+	} catch (error) {
+		console.error('[getStockLotIdByItemId] Error:', error);
+		throw error;
+	}
+}
+
 /**
  * Delete all stock lots for a specific pantry item
  */
@@ -694,6 +710,24 @@ export async function deleteStockLotsByItem(
 		return deleted;
 	} catch (error) {
 		console.error('[deleteStockLotsByItem] Error:', error);
+		throw error;
+	}
+}
+
+/**
+ * Delete specific stock lot by id
+ */
+
+export async function deleteStockLotByLotId(lotId: string) {
+	try {
+		const deleted = await db
+			.delete(stockLots)
+			.where(eq(stockLots.id, lotId))
+			.returning();
+
+		return deleted;
+	} catch (error) {
+		console.error('[deleteStockLotByLotId] Error:', error);
 		throw error;
 	}
 }
