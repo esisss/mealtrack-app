@@ -28,6 +28,22 @@ export type ShoppingListItemInsert = InferInsertModel<
 	typeof schema.shoppingListItems
 >;
 
+// Meal consumption types
+export type MealConsumptionSelect = InferSelectModel<
+	typeof schema.mealConsumptions
+>;
+export type MealConsumptionInsert = InferInsertModel<
+	typeof schema.mealConsumptions
+>;
+
+// Consumption event types
+export type ConsumptionEventSelect = InferSelectModel<
+	typeof schema.consumptionEvents
+>;
+export type ConsumptionEventInsert = InferInsertModel<
+	typeof schema.consumptionEvents
+>;
+
 // Combined type for displaying grocery items
 export type GroceryListItem = {
 	id: string;

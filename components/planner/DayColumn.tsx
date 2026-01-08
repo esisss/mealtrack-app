@@ -3,7 +3,7 @@
 import { MealPlanEntrySelect, RecipeSelect } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Trash2 } from 'lucide-react';
+import { Check, CheckSquareIcon, Trash2 } from 'lucide-react';
 import { RecipeSelector } from './RecipeSelector';
 import { cn } from '@/lib/utils';
 
@@ -39,19 +39,25 @@ export function DayColumn({ day, entries, recipes, onAddEntry, onRemoveEntry }: 
                                 {mealEntries.map((entry) => (
                                     <div
                                         key={entry.id}
-                                        className="bg-card border rounded-md p-2 text-sm flex justify-between items-start group"
+                                        className={cn("bg-card border rounded-md p-2 text-sm flex justify-between items-start group", entry.done ? "bg-primary/20" : "")}
                                     >
                                         <span className="font-medium line-clamp-2">
                                             {entry.recipeName || 'Unknown Recipe'}
                                         </span>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
-                                            onClick={() => onRemoveEntry(entry.id)}
-                                        >
-                                            <Trash2 className="h-3 w-3" />
-                                        </Button>
+                                        {entry.done ? (
+                                            <div>
+                                                <span className='font-bold'>DONE</span><CheckSquareIcon className="h-4 w-4 text-primary inline mx-1" />
+                                            </div>
+                                        ) : (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
+                                                onClick={() => onRemoveEntry(entry.id)}
+                                            >
+                                                <Trash2 className="h-3 w-3" />
+                                            </Button>
+                                        )}
                                     </div>
                                 ))}
                                 {mealEntries.length === 0 && (

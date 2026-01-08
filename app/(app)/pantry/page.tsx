@@ -23,7 +23,6 @@ export default async function PantryPage() {
 
   // Get grocery items
   const groceryItems = await getShoppingListWithItems(currentCycle.id);
-
   // Get stock items
   const stockItems = await getCurrentStockWithDetails(user.id);
 

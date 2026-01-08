@@ -3,7 +3,7 @@ import { useState } from 'react'
 
 export const DayIndicator = ({ days, onDayClick = () => { } }: { days: Date[]; onDayClick: (day: Date) => void }) => {
     const [selectedDay, setSelectedDay] = useState<Date | null>(new Date() || days[0]);
-
+    const today = new Date();
     const handleDayClick = (day: Date) => {
         setSelectedDay(day);
         onDayClick(day);
@@ -18,7 +18,7 @@ export const DayIndicator = ({ days, onDayClick = () => { } }: { days: Date[]; o
                     {day.getDate()}
                 </h2>
                 {
-                    selectedDay?.toDateString() === day.toDateString() && <Dot className='absolute -bottom-1.5 sm:bottom-1 text-accent' />
+                    today.toDateString() === day.toDateString() && <Dot className='absolute -bottom-1.5 sm:bottom-1 text-accent' />
                 }
             </div >)}
         </div >

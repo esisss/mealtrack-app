@@ -2,7 +2,7 @@
 
 import { MealCycleSelect, MealPlanEntrySelect, RecipeSelect } from '@/types';
 import { DayColumn } from './DayColumn';
-import { startTransition, useOptimistic, useState } from 'react';
+import { startTransition, Suspense, useOptimistic, useState } from 'react';
 import toast from 'react-hot-toast';
 import { addMealPlanEntryAction, removeMealPlanEntryAction } from '@/app/actions/planneractions';
 import { DayIndicator } from '../pantry/grocery/DayIndicator';
@@ -93,6 +93,7 @@ export function PlannerBoard({ cycle, entries, recipes, userId }: PlannerBoardPr
         const entryDateStr = new Date(e.day).toISOString().split('T')[0];
         return entryDateStr === dayStr;
     });
+
 
     const handleRemoveEntry = async (entryId: string) => {
         startTransition(async () => {
