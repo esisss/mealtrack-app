@@ -7,7 +7,7 @@ export const Dashboard = async ({ user }: { user: { id: string, displayName: str
     const cycleEntries = await getCycleEntries(thisWeekCycle?.id!);
     const nextEntry = cycleEntries.find((entry) => entry.done === false);
     const nextMealRecipeId = nextEntry?.recipeId;
-    const nextMealRecipe = nextMealRecipeId ? await getRecipeById(nextMealRecipeId) : [];
+    const nextMealRecipe = nextMealRecipeId ? await getRecipeById(nextMealRecipeId) : null;
     const stockStatus = (nextEntry && nextMealRecipeId)
         ? await checkStockForRecipe(user.id, nextMealRecipeId, parseFloat(nextEntry.servings || '1'))
         : { hasEnoughStock: true, missingIngredients: [] };
@@ -19,7 +19,7 @@ export const Dashboard = async ({ user }: { user: { id: string, displayName: str
                 <h1 className="text-2xl font-bold">Welcome, {user.displayName}</h1>
             </div>
             <MarkConsumption
-                nextMeal={nextMealRecipe[0]}
+                nextMeal={nextMealRecipe!}
                 mealPlanEntryId={nextEntry?.id!}
                 userId={user.id}
                 stockStatus={stockStatus}
