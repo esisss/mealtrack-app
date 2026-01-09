@@ -59,7 +59,8 @@ export async function getStockAction() {
 export async function addStockLotAction(
 	pantryItemId: string,
 	quantity: number,
-	expiresAt?: Date
+	expiresAt?: Date,
+	cycleId?: string
 ) {
 	try {
 		console.log('[addStockLotAction] Adding stock:', {
@@ -82,6 +83,10 @@ export async function addStockLotAction(
 			quantity,
 			expiresAt
 		);
+
+		if (cycleId) {
+			await updateShoppingListForCycle(cycleId, user.id);
+		}
 
 		revalidatePath('/pantry');
 

@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 
-export const GroceryBoard = ({ groceryItems, cycleId }: { groceryItems: GroceryListItem[], cycleId: string }) => {
+export const GroceryBoard = ({ groceryItems }: { groceryItems: GroceryListItem[], }) => {
     const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
     const [itemToUncheck, setItemToUncheck] = useState<GroceryListItem | null>(null);
 

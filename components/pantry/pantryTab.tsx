@@ -23,7 +23,7 @@ export const PantryTab = ({
                 <TabsTrigger value="items">Items</TabsTrigger>
             </TabsList>
             <TabsContent className="w-full flex items-center justify-center" value="groceries">
-                <GroceryBoard groceryItems={groceryItems} cycleId={cycleId} />
+                <GroceryBoard groceryItems={groceryItems} />
             </TabsContent>
             <TabsContent className="w-full flex items-center justify-center" value="stock">
                 <StockBoard stockItems={stockItems} pantryItems={items} cycleId={cycleId} />
