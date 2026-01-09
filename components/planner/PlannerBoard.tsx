@@ -2,9 +2,10 @@
 
 import { MealCycleSelect, MealPlanEntrySelect, RecipeSelect } from '@/types';
 import { DayColumn } from './DayColumn';
-import { startTransition, useOptimistic } from 'react';
+import { startTransition, Suspense, useOptimistic, useState } from 'react';
 import toast from 'react-hot-toast';
 import { addMealPlanEntryAction, removeMealPlanEntryAction } from '@/app/actions/planneractions';
+import { DayIndicator } from '../pantry/grocery/DayIndicator';
 
 interface PlannerBoardProps {
     cycle: MealCycleSelect;
@@ -21,6 +22,11 @@ type OptimisticAction =
 
 export function PlannerBoard({ cycle, entries, recipes, userId }: PlannerBoardProps) {
     const startDate = new Date(cycle.startDate);
+    const [selectedDay, setSelectedDay] = useState<Date>(new Date());
+
+    const handleDayClick = (day: Date) => {
+        setSelectedDay(day);
+    }
 
     // useOptimistic for instant UI updates
     const [optimisticEntries, addOptimisticUpdate] = useOptimistic<
@@ -82,6 +88,12 @@ export function PlannerBoard({ cycle, entries, recipes, userId }: PlannerBoardPr
             }
         })
     };
+    const dayStr = selectedDay?.toISOString().split('T')[0];
+    const dayEntries = optimisticEntries.filter((e) => {
+        const entryDateStr = new Date(e.day).toISOString().split('T')[0];
+        return entryDateStr === dayStr;
+    });
+
 
     const handleRemoveEntry = async (entryId: string) => {
         startTransition(async () => {
@@ -100,36 +112,31 @@ export function PlannerBoard({ cycle, entries, recipes, userId }: PlannerBoardPr
     };
 
     return (
-        <div className="flex flex-col justify-center gap-6 overflow-x-auto pb-4 mx-auto ">
-            <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold tracking-tight">Week Plan</h2>
-                <div className="text-sm text-muted-foreground">
-                    {startDate.toLocaleDateString()} -{' '}
-                    {new Date(cycle.endDate).toLocaleDateString()}
+        <div>
+            <div className="flex flex-row justify-between items-center sm:px-4">
+
+                <div className="flex flex-col justify-between items-start">
+                    <h2 className="text-2xl font-bold tracking-tight text-left">Week Plan</h2>
+                    <div className="text-sm text-muted-foreground text-left">
+                        {startDate.toLocaleDateString()} -{' '}
+                        {new Date(cycle.endDate).toLocaleDateString()}
+                    </div>
+                    <DayIndicator onDayClick={handleDayClick} days={days} />
                 </div>
             </div>
 
-            <div className="flex gap-4 justify-between min-w-max">
-                {days.map((day) => {
-                    const dayStr = day.toISOString().split('T')[0];
-                    const dayEntries = optimisticEntries.filter((e) => {
-                        const entryDateStr = new Date(e.day).toISOString().split('T')[0];
-                        return entryDateStr === dayStr;
-                    });
 
-                    return (
-                        <DayColumn
-                            key={day.toISOString()}
-                            day={day}
-                            entries={dayEntries}
-                            recipes={recipes}
-                            onAddEntry={(recipeId, mealType) =>
-                                handleAddEntry(day, recipeId, mealType)
-                            }
-                            onRemoveEntry={handleRemoveEntry}
-                        />
-                    );
-                })}
+            <div className="flex gap-4 justify-between min-w-max">
+                <DayColumn
+                    key={selectedDay?.toISOString()}
+                    day={selectedDay}
+                    entries={dayEntries}
+                    recipes={recipes}
+                    onAddEntry={(recipeId, mealType) =>
+                        handleAddEntry(selectedDay, recipeId, mealType)
+                    }
+                    onRemoveEntry={handleRemoveEntry}
+                />
             </div>
         </div>
     )

@@ -9,6 +9,8 @@ import {
 	stockLots,
 	shoppingLists,
 	shoppingListItems,
+	mealConsumptions,
+	consumptionEvents,
 } from '@/db/schema';
 import {
 	RecipeIngredientInsert,
@@ -18,7 +20,9 @@ import {
 	ShoppingListItemInsert,
 	GroceryListItem,
 	StockItem,
-	StockLotInsert,
+	MealCycleSelect,
+	MealConsumptionInsert,
+	ConsumptionEventInsert,
 } from '@/types';
 import { neon } from '@neondatabase/serverless';
 import {
@@ -29,6 +33,7 @@ import {
 	gte,
 	lte,
 	sql as sqlAgg,
+	inArray,
 } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/neon-http';
 
@@ -65,9 +70,20 @@ export const getRecipes = async (userId: string) => {
 		.orderBy(desc(recipes.createdAt));
 };
 
+export const getRecipeById = async (recipeId: string) => {
+	return db.select().from(recipes).where(eq(recipes.id, recipeId)).limit(1);
+};
+
 //Recipe Ingredient DAL functions
 export const addRecipeIngredients = async (items: RecipeIngredientInsert[]) => {
 	return db.insert(recipeIngredients).values(items).returning();
+};
+
+export const getRecipeIngredients = async (recipeId: string) => {
+	return db
+		.select()
+		.from(recipeIngredients)
+		.where(eq(recipeIngredients.recipeId, recipeId));
 };
 
 // Meal Cycle DAL functions
@@ -111,6 +127,38 @@ export async function getOrCreateCurrentCycle(userId: string, date: Date) {
 	return newCycle[0];
 }
 
+export async function getThisWeekCycle(
+	userId: string
+): Promise<MealCycleSelect | null> {
+	const startOfWeek = new Date();
+	const day = startOfWeek.getDay();
+	const diff = startOfWeek.getDate() - day + 1;
+	startOfWeek.setDate(diff);
+	startOfWeek.setHours(0, 0, 0, 0);
+
+	const endOfWeek = new Date(startOfWeek);
+	endOfWeek.setDate(startOfWeek.getDate() + 6);
+	endOfWeek.setHours(23, 59, 59, 999);
+
+	const existingCycle = await db
+		.select()
+		.from(mealCycles)
+		.where(
+			and(
+				eq(mealCycles.userId, userId),
+				gte(mealCycles.startDate, startOfWeek.toISOString()),
+				lte(mealCycles.endDate, endOfWeek.toISOString())
+			)
+		)
+		.limit(1);
+
+	if (existingCycle.length > 0) {
+		return existingCycle[0];
+	} else {
+		return null;
+	}
+}
+
 export async function getCycleEntries(cycleId: string) {
 	return db
 		.select({
@@ -130,6 +178,12 @@ export async function getCycleEntries(cycleId: string) {
 
 export async function addMealPlanEntry(entry: MealPlanEntryInsert) {
 	return db.insert(mealPlanEntries).values(entry).returning();
+}
+export async function getMealPlanEntry(entryId: string) {
+	return db
+		.select()
+		.from(mealPlanEntries)
+		.where(eq(mealPlanEntries.id, entryId));
 }
 
 export async function removeMealPlanEntry(entryId: string) {
@@ -199,8 +253,12 @@ export async function getRequiredIngredientsForCycle(cycleId: string) {
 			.leftJoin(pantryItems, eq(recipeIngredients.pantryItemId, pantryItems.id))
 
 			// Only get entries for THIS specific cycle
-			.where(eq(mealPlanEntries.cycleId, cycleId))
-
+			.where(
+				and(
+					eq(mealPlanEntries.cycleId, cycleId),
+					eq(mealPlanEntries.done, false)
+				)
+			)
 			// Group results by ingredient so we get ONE row per ingredient
 			// with the TOTAL quantity needed across all meals
 			.groupBy(pantryItems.id, pantryItems.name, pantryItems.baseUnit)
@@ -673,6 +731,22 @@ export async function getStockLotsByItem(userId: string, pantryItemId: string) {
 	}
 }
 
+// Get lot id by by pantry item
+
+export async function getStockLotByItemId(pantryItemId: string) {
+	try {
+		const lot = await db
+			.select()
+			.from(stockLots)
+			.where(eq(stockLots.pantryItemId, pantryItemId))
+			.limit(1);
+		return lot[0];
+	} catch (error) {
+		console.error('[getStockLotIdByItemId] Error:', error);
+		throw error;
+	}
+}
+
 /**
  * Delete all stock lots for a specific pantry item
  */
@@ -694,6 +768,299 @@ export async function deleteStockLotsByItem(
 		return deleted;
 	} catch (error) {
 		console.error('[deleteStockLotsByItem] Error:', error);
+		throw error;
+	}
+}
+
+/**
+ * Delete specific stock lot by id
+ */
+
+export async function deleteStockLotByLotId(lotId: string) {
+	try {
+		const deleted = await db
+			.delete(stockLots)
+			.where(eq(stockLots.id, lotId))
+			.returning();
+
+		return deleted;
+	} catch (error) {
+		console.error('[deleteStockLotByLotId] Error:', error);
+		throw error;
+	}
+}
+
+// ============================================
+// MEAL CONSUMPTION TRACKING FUNCTIONS
+// ============================================
+
+/**
+ * Mark a meal as consumed
+ * This creates a meal consumption record, marks the plan entry as done,
+ * and records individual ingredient consumption events.
+ */
+export async function markMealConsumption(
+	userId: string,
+	mealPlanEntryId: string,
+	notes?: string
+) {
+	try {
+		// 1. Get the meal plan entry to extract recipeId and servings
+		const entry = await db
+			.select()
+			.from(mealPlanEntries)
+			.where(eq(mealPlanEntries.id, mealPlanEntryId))
+			.limit(1);
+
+		if (!entry[0]) {
+			throw new Error('Meal plan entry not found');
+		}
+
+		// 2. Mark the meal plan entry as done
+		await db
+			.update(mealPlanEntries)
+			.set({ done: true })
+			.where(eq(mealPlanEntries.id, mealPlanEntryId));
+
+		// 3. Create meal consumption record
+		const consumption = await db
+			.insert(mealConsumptions)
+			.values({
+				userId,
+				mealPlanEntryId,
+				recipeId: entry[0].recipeId,
+				notes,
+			})
+			.returning();
+
+		const mealConsumptionId = consumption[0].id;
+
+		// 4. Record ingredient consumption events
+		// Get ingredients for this recipe
+		const ingredients = await getRecipeIngredients(entry[0].recipeId);
+
+		if (ingredients.length > 0) {
+			const servings = parseFloat(entry[0].servings || '1');
+
+			const events: ConsumptionEventInsert[] = ingredients.map((ing) => ({
+				userId,
+				pantryItemId: ing.pantryItemId,
+				qty: (parseFloat(ing.qtyPerServing) * servings).toString(),
+				mealConsumptionId: mealConsumptionId,
+			}));
+
+			await db.insert(consumptionEvents).values(events);
+		}
+
+		return consumption[0];
+	} catch (error) {
+		console.error('[markMealConsumption] Error:', error);
+		throw error;
+	}
+}
+
+/**
+ * Get recent meal consumption history
+ * Returns meals consumed in the last N days
+ */
+export async function getRecentMealConsumptions(
+	userId: string,
+	days: number = 7
+) {
+	try {
+		const startDate = new Date();
+		startDate.setDate(startDate.getDate() - days);
+
+		return db
+			.select({
+				id: mealConsumptions.id,
+				consumedAt: mealConsumptions.consumedAt,
+				notes: mealConsumptions.notes,
+				recipeName: recipes.name,
+				recipeId: recipes.id,
+			})
+			.from(mealConsumptions)
+			.leftJoin(recipes, eq(mealConsumptions.recipeId, recipes.id))
+			.where(
+				and(
+					eq(mealConsumptions.userId, userId),
+					gte(mealConsumptions.consumedAt, startDate)
+				)
+			)
+			.orderBy(desc(mealConsumptions.consumedAt));
+	} catch (error) {
+		console.error('[getRecentMealConsumptions] Error:', error);
+		throw error;
+	}
+}
+
+/**
+ * Get current week progress (planned vs completed meals)
+ * Shows how many meals have been completed out of total planned
+ */
+export async function getCurrentWeekProgress(userId: string, cycleId: string) {
+	try {
+		const result = await db
+			.select({
+				totalPlanned: sqlAgg<number>`COUNT(${mealPlanEntries.id})`.as(
+					'total_planned'
+				),
+				totalCompleted:
+					sqlAgg<number>`COUNT(CASE WHEN ${mealPlanEntries.done} = true THEN 1 END)`.as(
+						'total_completed'
+					),
+			})
+			.from(mealPlanEntries)
+			.where(eq(mealPlanEntries.cycleId, cycleId));
+
+		const planned = result[0]?.totalPlanned || 0;
+		const completed = result[0]?.totalCompleted || 0;
+
+		return {
+			planned,
+			completed,
+			remaining: planned - completed,
+			completionRate: planned > 0 ? (completed / planned) * 100 : 0,
+		};
+	} catch (error) {
+		console.error('[getCurrentWeekProgress] Error:', error);
+		throw error;
+	}
+}
+
+/**
+ * Get user's favorite/most-eaten recipes
+ * Returns recipes ordered by consumption frequency
+ */
+export async function getFavoriteRecipes(userId: string, limit: number = 10) {
+	try {
+		return db
+			.select({
+				recipeId: recipes.id,
+				recipeName: recipes.name,
+				timesEaten: sqlAgg<number>`COUNT(${mealConsumptions.id})`.as(
+					'times_eaten'
+				),
+				lastEaten: sqlAgg<Date>`MAX(${mealConsumptions.consumedAt})`.as(
+					'last_eaten'
+				),
+			})
+			.from(mealConsumptions)
+			.leftJoin(recipes, eq(mealConsumptions.recipeId, recipes.id))
+			.where(eq(mealConsumptions.userId, userId))
+			.groupBy(recipes.id, recipes.name)
+			.orderBy(desc(sqlAgg`COUNT(${mealConsumptions.id})`))
+			.limit(limit);
+	} catch (error) {
+		console.error('[getFavoriteRecipes] Error:', error);
+		throw error;
+	}
+}
+
+/**
+ * Check if the user has enough stock for all ingredients in a recipe
+ */
+export async function checkStockForRecipe(
+	userId: string,
+	recipeId: string,
+	servings: number = 1
+) {
+	try {
+		// 1. Get recipe ingredients with their names
+		const ingredients = await db
+			.select({
+				pantryItemId: recipeIngredients.pantryItemId,
+				qtyPerServing: recipeIngredients.qtyPerServing,
+				name: pantryItems.name,
+			})
+			.from(recipeIngredients)
+			.leftJoin(pantryItems, eq(recipeIngredients.pantryItemId, pantryItems.id))
+			.where(eq(recipeIngredients.recipeId, recipeId));
+
+		if (ingredients.length === 0)
+			return { hasEnoughStock: true, missingIngredients: [] };
+
+		// 2. Get current stock for the user
+		const stock = await getCurrentStock(userId);
+		const stockMap = new Map(
+			stock.map((s) => [s.pantryItemId, parseFloat(s.totalInStock || '0')])
+		);
+
+		// 3. Compare required vs stock
+		const missingIngredients = ingredients
+			.map((ing) => {
+				const required = parseFloat(ing.qtyPerServing) * servings;
+				const inStock = stockMap.get(ing.pantryItemId!) || 0;
+				if (required > inStock) {
+					return {
+						name: ing.name!,
+						required,
+						inStock,
+					};
+				}
+				return null;
+			})
+			.filter((m): m is NonNullable<typeof m> => m !== null);
+
+		return {
+			hasEnoughStock: missingIngredients.length === 0,
+			missingIngredients,
+		};
+	} catch (error) {
+		console.error('[checkStockForRecipe] Error:', error);
+		throw error;
+	}
+}
+
+/**
+ * Suggests recipes that the user can cook right now based on current stock levels.
+ */
+export async function getCookableRecipes(userId: string) {
+	try {
+		// 1. Get all recipes for this user
+		const userRecipes = await getRecipes(userId);
+		if (userRecipes.length === 0) return [];
+
+		// 2. Get all ingredients for these recipes in one batch
+		const recipeIds = userRecipes.map((r) => r.id);
+		const allIngredients = await db
+			.select({
+				recipeId: recipeIngredients.recipeId,
+				pantryItemId: recipeIngredients.pantryItemId,
+				qtyPerServing: recipeIngredients.qtyPerServing,
+			})
+			.from(recipeIngredients)
+			.where(inArray(recipeIngredients.recipeId, recipeIds));
+
+		// 3. Get current stock
+		const stock = await getCurrentStock(userId);
+		const stockMap = new Map(
+			stock.map((s) => [s.pantryItemId, parseFloat(s.totalInStock || '0')])
+		);
+
+		// 4. Group ingredients by recipe for easy checking
+		const ingredientsByRecipe = new Map<string, typeof allIngredients>();
+		for (const ing of allIngredients) {
+			const existing = ingredientsByRecipe.get(ing.recipeId) || [];
+			existing.push(ing);
+			ingredientsByRecipe.set(ing.recipeId, existing);
+		}
+
+		// 5. Filter recipes where EVERY ingredient is in stock for 1 serving
+		const cookableRecipes = userRecipes.filter((recipe) => {
+			const ingredients = ingredientsByRecipe.get(recipe.id) || [];
+			if (ingredients.length === 0) return false; // Skip recipes with no ingredients
+
+			return ingredients.every((ing) => {
+				const available = stockMap.get(ing.pantryItemId) || 0;
+				const required = parseFloat(ing.qtyPerServing);
+				return available >= required;
+			});
+		});
+
+		return cookableRecipes;
+	} catch (error) {
+		console.error('[getCookableRecipes] Error:', error);
 		throw error;
 	}
 }

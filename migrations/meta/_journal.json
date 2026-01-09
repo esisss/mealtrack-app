@@ -22,6 +22,13 @@
       "when": 1763180057763,
       "tag": "0002_left_vapor",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1767755338532,
+      "tag": "0003_flashy_puff_adder",
+      "breakpoints": true
     }
   ]
 }

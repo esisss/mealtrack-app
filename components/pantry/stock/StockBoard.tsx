@@ -73,7 +73,7 @@ export const StockBoard = ({
             updateOptimisticStock({ type: 'add', item: optimisticItem });
         });
 
-        const result = await addStockLotAction(selectedItemId, qty, expiry);
+        const result = await addStockLotAction(selectedItemId, qty, expiry, cycleId);
 
         if (result.success) {
             setIsAddDialogOpen(false);

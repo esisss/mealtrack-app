@@ -28,10 +28,10 @@ export function RecipeSelector({ recipes, onSelect }: RecipeSelectorProps) {
     return (
         <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
-                <Button variant="outline" size="sm" className='hover:text-primary transition-colors rounded-lg'>
+                <div className='border-dashed border border-foreground/20 rounded-lg w-full h-38 flex items-center justify-center mb-2 cursor-pointer'>
                     <Plus className="mr-2 h-4 w-4" />
                     Add Recipe
-                </Button>
+                </div>
             </SheetTrigger>
             <SheetContent>
                 <SheetHeader>

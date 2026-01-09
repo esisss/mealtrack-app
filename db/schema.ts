@@ -181,6 +181,22 @@ export const stockLots = pgTable(
 	]
 );
 
+export const mealConsumptions = pgTable(
+	'meal_consumptions',
+	{
+		id: uuid('id').primaryKey().defaultRandom(),
+		userId: uuid('user_id').notNull(),
+		mealPlanEntryId: uuid('meal_plan_entry_id').notNull(),
+		recipeId: uuid('recipe_id').notNull(),
+		consumedAt: timestamp('consumed_at', { withTimezone: true }).defaultNow(),
+		notes: text('notes'),
+	},
+	(t) => [
+		index('meal_consumption_user_time_idx').on(t.userId, t.consumedAt),
+		index('meal_consumption_entry_idx').on(t.mealPlanEntryId),
+	]
+);
+
 export const consumptionEvents = pgTable(
 	'consumption_events',
 	{
@@ -189,19 +205,67 @@ export const consumptionEvents = pgTable(
 		pantryItemId: uuid('pantry_item_id').notNull(),
 		qty: numeric('qty').notNull(), // en baseUnit
 		occurredAt: timestamp('occurred_at', { withTimezone: true }).defaultNow(),
-		mealPlanEntryId: uuid('meal_plan_entry_id'),
-		meta: jsonb('meta'),
+		mealConsumptionId: uuid('meal_consumption_id'),
 	},
-	(t) => [index('consumption_user_time_idx').on(t.userId, t.occurredAt)]
+	(t) => [
+		index('consumption_user_time_idx').on(t.userId, t.occurredAt),
+		index('consumption_meal_idx').on(t.mealConsumptionId),
+	]
 );
 export const recipesRelations = relations(recipes, ({ many }) => ({
 	ingredients: many(recipeIngredients),
+	mealConsumptions: many(mealConsumptions),
 }));
 
 export const pantryRelations = relations(pantryItems, ({ many }) => ({
 	recipeUses: many(recipeIngredients),
+	consumptionEvents: many(consumptionEvents),
 }));
 
 export const cyclesRelations = relations(mealCycles, ({ many }) => ({
 	entries: many(mealPlanEntries),
 }));
+
+export const mealPlanEntriesRelations = relations(
+	mealPlanEntries,
+	({ one, many }) => ({
+		cycle: one(mealCycles, {
+			fields: [mealPlanEntries.cycleId],
+			references: [mealCycles.id],
+		}),
+		recipe: one(recipes, {
+			fields: [mealPlanEntries.recipeId],
+			references: [recipes.id],
+		}),
+		mealConsumptions: many(mealConsumptions),
+	})
+);
+
+export const mealConsumptionsRelations = relations(
+	mealConsumptions,
+	({ one, many }) => ({
+		mealPlanEntry: one(mealPlanEntries, {
+			fields: [mealConsumptions.mealPlanEntryId],
+			references: [mealPlanEntries.id],
+		}),
+		recipe: one(recipes, {
+			fields: [mealConsumptions.recipeId],
+			references: [recipes.id],
+		}),
+		ingredientConsumptions: many(consumptionEvents),
+	})
+);
+
+export const consumptionEventsRelations = relations(
+	consumptionEvents,
+	({ one }) => ({
+		mealConsumption: one(mealConsumptions, {
+			fields: [consumptionEvents.mealConsumptionId],
+			references: [mealConsumptions.id],
+		}),
+		pantryItem: one(pantryItems, {
+			fields: [consumptionEvents.pantryItemId],
+			references: [pantryItems.id],
+		}),
+	})
+);
