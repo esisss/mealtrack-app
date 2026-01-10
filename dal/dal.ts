@@ -86,6 +86,41 @@ export const getRecipeIngredients = async (recipeId: string) => {
 		.where(eq(recipeIngredients.recipeId, recipeId));
 };
 
+export const deleteRecipe = async (recipeId: string) => {
+	return db.delete(recipes).where(eq(recipes.id, recipeId)).returning();
+};
+
+export const updateRecipe = async (
+	recipeId: string,
+	recipe: Partial<RecipeInsert>
+) => {
+	return db
+		.update(recipes)
+		.set(recipe)
+		.where(eq(recipes.id, recipeId))
+		.returning();
+};
+
+export const deleteRecipeIngredients = async (recipeId: string) => {
+	return db
+		.delete(recipeIngredients)
+		.where(eq(recipeIngredients.recipeId, recipeId))
+		.returning();
+};
+
+export const updateRecipeIngredients = async (
+	recipeId: string,
+	items: RecipeIngredientInsert[]
+) => {
+	// Delete existing ingredients first
+	await deleteRecipeIngredients(recipeId);
+	// Then insert new ones
+	if (items.length > 0) {
+		return db.insert(recipeIngredients).values(items).returning();
+	}
+	return [];
+};
+
 // Meal Cycle DAL functions
 export async function getOrCreateCurrentCycle(userId: string, date: Date) {
 	const startOfWeek = date ?? new Date();

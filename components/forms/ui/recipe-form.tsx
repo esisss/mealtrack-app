@@ -4,14 +4,17 @@ import { useActionState, useState, useEffect } from 'react';
 import {
   RecipeActionResponse,
   validateAndSendRecipe,
+  updateRecipeAction,
 } from '../../../app/actions/recipe-form-action';
-import { LoaderCircleIcon, Trash } from 'lucide-react';
+import { ImageIcon, LoaderCircleIcon, Trash } from 'lucide-react';
 import { SearchBarSelect } from '@/components/ui/searchbarselect';
 import { toast } from 'react-hot-toast';
 import { IngredientItem } from './ingredient-item';
-import { PantryItemSelect } from '@/types';
+import { PantryItemSelect, RecipeSelect } from '@/types';
 import { AddNewIngredient } from './addNewIngredientInput';
 import { Button } from '@/components/ui/button';
+import { CldUploadWidget } from "next-cloudinary";
+import Image from 'next/image';
 
 interface SelectedIngredient {
   id: string;
@@ -27,19 +30,51 @@ const INITIAL_STATE: RecipeActionResponse = {
 interface RecipeFormProps {
   onSuccess?: () => void;
   pantryItems?: PantryItemSelect[];
+  initialRecipe?: RecipeSelect;
+  recipeIngredients?: Array<{
+    pantryItemId: string;
+    qtyPerServing: string;
+  }>;
+  mode?: 'create' | 'edit';
 }
 
-export const RecipeForm = ({ onSuccess, pantryItems }: RecipeFormProps) => {
+export const RecipeForm = ({
+  onSuccess,
+  pantryItems,
+  initialRecipe,
+  recipeIngredients,
+  mode = 'create'
+}: RecipeFormProps) => {
   const [selectedIngredients, setSelectedIngredients] = useState<
     SelectedIngredient[]
   >([]);
+  const [imageUpload, setImageUpload] = useState<{ secure_url: string, public_id: string } | null>(
+    initialRecipe?.imageUrl && initialRecipe?.publicImageId
+      ? { secure_url: initialRecipe.imageUrl, public_id: initialRecipe.publicImageId }
+      : null
+  );
+  const [imageUploading, setImageUploading] = useState<boolean>(false);
   const [availableIngredients, setAvailableIngredients] = useState<PantryItemSelect[]>(pantryItems || []);
   const [actionState, performAction, isPending] = useActionState<
     RecipeActionResponse,
     FormData
   >((state: RecipeActionResponse, formData: FormData) => {
+    if (mode === 'edit' && initialRecipe) {
+      return updateRecipeAction(initialRecipe.id, formData);
+    }
     return validateAndSendRecipe(formData);
   }, INITIAL_STATE);
+
+  // Initialize form with existing recipe data in edit mode
+  useEffect(() => {
+    if (mode === 'edit' && recipeIngredients && pantryItems) {
+      const initialIngredients = recipeIngredients.map((ri) => ({
+        id: ri.pantryItemId,
+        qty: ri.qtyPerServing,
+      }));
+      setSelectedIngredients(initialIngredients);
+    }
+  }, [mode, recipeIngredients, pantryItems]);
 
   // Notify parent (modal) when action succeeds
   useEffect(() => {
@@ -94,6 +129,14 @@ export const RecipeForm = ({ onSuccess, pantryItems }: RecipeFormProps) => {
     };
     setAvailableIngredients((prev) => [...prev, newIngredientObject]);
   };
+  const handleImageUpload = (result: any) => {
+    setImageUploading(false);
+    setImageUpload({
+      secure_url: result.info.secure_url,
+      public_id: result.info.public_id
+    });
+
+  };
 
   return (
     <form action={performAction} className="space-y-4" >
@@ -104,10 +147,11 @@ export const RecipeForm = ({ onSuccess, pantryItems }: RecipeFormProps) => {
         >
           Recipe Name
         </label>
-        < input
+        <input
           name="recipeName"
           type="text"
           id="recipeName"
+          defaultValue={initialRecipe?.name || ''}
           className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
           required
         />
@@ -124,9 +168,10 @@ export const RecipeForm = ({ onSuccess, pantryItems }: RecipeFormProps) => {
         >
           Recipe Notes
         </label>
-        < textarea
+        <textarea
           name="notes"
           id="notes"
+          defaultValue={initialRecipe?.notes || ''}
           className="mt-1 block w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
           rows={3}
           required
@@ -190,7 +235,25 @@ export const RecipeForm = ({ onSuccess, pantryItems }: RecipeFormProps) => {
           )}
         </div>
       </div>
-
+      {
+        imageUpload ? (
+          <div className="mt-2">
+            <input readOnly type="text" name="public_id" value={imageUpload.public_id} className='hidden' />
+            <input readOnly type="text" name="secure_url" value={imageUpload.secure_url} className='hidden' />
+            <Image src={imageUpload.secure_url} alt="Recipe" width={500} height={500} className="w-full h-40 object-cover rounded-lg" />
+          </div>
+        ) :
+          <CldUploadWidget options={{
+            maxFiles: 1,
+            maxFileSize: 5 * 1024 * 1024, // 5 MB
+            clientAllowedFormats: ["jpg", "jpeg", "png", "webp"],
+          }}
+            uploadPreset='mealwisepreset'
+            onUploadAdded={() => setImageUploading(true)}
+            onSuccess={handleImageUpload} >
+            {({ open }) => <Button onClick={(e) => { e.preventDefault(); open() }}> <ImageIcon className="mr-2 h-4 w-4" /> Upload Recipe Image</Button>}
+          </CldUploadWidget>
+      }
       <AddNewIngredient onAdd={handleAddNewIngredient} />
 
       < div className="flex justify-end" >
@@ -200,9 +263,9 @@ export const RecipeForm = ({ onSuccess, pantryItems }: RecipeFormProps) => {
             }`
           }
           type="submit"
-          disabled={isPending}
+          disabled={isPending || imageUploading}
         >
-          {isPending ? `Saving Recipe` : `Save Recipe`}{' '}
+          {isPending ? (mode === 'edit' ? 'Updating Recipe' : 'Saving Recipe') : (mode === 'edit' ? 'Update Recipe' : 'Save Recipe')}{' '}
           {isPending && <LoaderCircleIcon className="animate-spin h-4 w-4" />}
         </Button>
       </div>
