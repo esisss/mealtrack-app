@@ -13,7 +13,7 @@ export const MarkConsumption = ({
     userId,
     stockStatus
 }: {
-    nextMeal: RecipeSelect,
+    nextMeal: RecipeSelect[],
     mealPlanEntryId: string,
     userId: string,
     stockStatus: {
@@ -21,15 +21,17 @@ export const MarkConsumption = ({
         missingIngredients: { name: string; required: number; inStock: number }[];
     }
 }) => {
+    const nextMealData = nextMeal?.[0]
+    console.log(nextMealData)
     const markConsumption = async () => {
-        if (confirm(`Are you sure you want to mark "${nextMeal.name}" as consumed?`)) {
+        if (confirm(`Are you sure you want to mark "${nextMealData?.name}" as consumed?`)) {
             const result = await markConsumptionAction(userId, mealPlanEntryId)
             if (!result.success) {
                 alert('Failed to mark consumption')
             }
         }
     }
-    if (!nextMeal) {
+    if (!nextMealData) {
         return (
             <div className="w-full sm:w-164 h-72 bg-sidebar rounded-lg p-2 flex flex-row">
                 <div className="flex flex-col justify-center items-center w-full">
@@ -45,7 +47,7 @@ export const MarkConsumption = ({
             <div className="relative w-full sm:w-1/3 h-32 sm:h-full mr-0 sm:mr-4 mb-2 sm:mb-0 shrink-0">
                 <Image
                     className="rounded-lg object-cover"
-                    src="https://gourmet.iprospect.cl/wp-content/uploads/2016/12/Carbonara-editada.jpg"
+                    src={nextMealData.imageUrl ? nextMealData.imageUrl : "https://gourmet.iprospect.cl/wp-content/uploads/2016/12/Carbonara-editada.jpg"}
                     alt="Carbonara"
                     fill
                     sizes="(max-width: 640px) 100vw, 33vw"
@@ -53,8 +55,8 @@ export const MarkConsumption = ({
             </div>
             <div className="flex flex-col w-full">
                 <p className="text-sm font-semibold text-muted-foreground">Next Meal</p>
-                <p className="text-xl">{nextMeal.name}</p>
-                <p className="text-sm text-muted-foreground h-full">{nextMeal.notes}</p>
+                <p className="text-xl">{nextMealData.name}</p>
+                <p className="text-sm text-muted-foreground h-full">{nextMealData.notes}</p>
 
                 {stockStatus.hasEnoughStock ? (
                     <button

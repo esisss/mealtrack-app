@@ -68,6 +68,8 @@ export const recipes = pgTable(
 		userId: uuid('user_id').notNull(),
 		name: varchar('name', { length: 200 }).notNull(),
 		notes: text('notes'),
+		imageUrl: varchar('image_url'),
+		publicImageId: varchar('public_image_id'),
 		createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 		updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 	},
