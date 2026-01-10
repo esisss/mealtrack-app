@@ -72,6 +72,8 @@ export const RecipeForm = ({
         id: ri.pantryItemId,
         qty: ri.qtyPerServing,
       }));
+      // stinky code smell but not sure how to workaround efficiently, and it works
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedIngredients(initialIngredients);
     }
   }, [mode, recipeIngredients, pantryItems]);
@@ -239,7 +241,7 @@ export const RecipeForm = ({
         imageUpload ? (
           <div className="mt-2">
             <input readOnly type="text" name="public_id" value={imageUpload.public_id} className='hidden' />
-            <input readOnly type="text" name="secure_url" value={imageUpload.secure_url} className='hidden' />
+            <input type="text" name="secure_url" value={imageUpload.secure_url} className='hidden' />
             <Image src={imageUpload.secure_url} alt="Recipe" width={500} height={500} className="w-full h-40 object-cover rounded-lg" />
           </div>
         ) :
@@ -251,7 +253,7 @@ export const RecipeForm = ({
             uploadPreset='mealwisepreset'
             onUploadAdded={() => setImageUploading(true)}
             onSuccess={handleImageUpload} >
-            {({ open }) => <Button onClick={(e) => { e.preventDefault(); open() }}> <ImageIcon className="mr-2 h-4 w-4" /> Upload Recipe Image</Button>}
+            {({ open }) => <Button onClick={(e) => { e.preventDefault(); open() }} className="flex items-center gap-2"> <ImageIcon className="mr-2 h-4 w-4" /> Upload Recipe Image</Button>}
           </CldUploadWidget>
       }
       <AddNewIngredient onAdd={handleAddNewIngredient} />
