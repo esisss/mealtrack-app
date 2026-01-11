@@ -1,4 +1,4 @@
-CREATE TYPE "public"."base_unit" AS ENUM('g', 'ml', 'unit');--> statement-breakpoint
+CREATE TYPE "public"."base_unit" AS ENUM('g', 'ml', 'unit', 'cups', 'tbsp', 'tsp');--> statement-breakpoint
 CREATE TYPE "public"."cycle_status" AS ENUM('planning', 'active', 'closed');--> statement-breakpoint
 CREATE TYPE "public"."list_item_status" AS ENUM('pending', 'bought', 'skipped');--> statement-breakpoint
 CREATE TYPE "public"."meal_type" AS ENUM('breakfast', 'lunch', 'dinner', 'snack');--> statement-breakpoint
@@ -8,8 +8,16 @@ CREATE TABLE "consumption_events" (
 	"pantry_item_id" uuid NOT NULL,
 	"qty" numeric NOT NULL,
 	"occurred_at" timestamp with time zone DEFAULT now(),
-	"meal_plan_entry_id" uuid,
-	"meta" jsonb
+	"meal_consumption_id" uuid
+);
+--> statement-breakpoint
+CREATE TABLE "meal_consumptions" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_id" uuid NOT NULL,
+	"meal_plan_entry_id" uuid NOT NULL,
+	"recipe_id" uuid NOT NULL,
+	"consumed_at" timestamp with time zone DEFAULT now(),
+	"notes" text
 );
 --> statement-breakpoint
 CREATE TABLE "meal_cycles" (
@@ -38,6 +46,7 @@ CREATE TABLE "pantry_items" (
 	"user_id" uuid NOT NULL,
 	"name" varchar(160) NOT NULL,
 	"base_unit" "base_unit" NOT NULL,
+	"fixed_buy_qty" numeric,
 	"unit_to_grams" numeric,
 	"unit_to_ml" numeric,
 	"kcal_per_base_unit" numeric,
@@ -80,6 +89,8 @@ CREATE TABLE "recipes" (
 	"user_id" uuid NOT NULL,
 	"name" varchar(200) NOT NULL,
 	"notes" text,
+	"image_url" varchar,
+	"public_image_id" varchar,
 	"created_at" timestamp with time zone DEFAULT now(),
 	"updated_at" timestamp with time zone DEFAULT now()
 );
@@ -113,8 +124,10 @@ CREATE TABLE "stock_lots" (
 	"qty_remaining" numeric NOT NULL
 );
 --> statement-breakpoint
-DROP TABLE "todo" CASCADE;--> statement-breakpoint
 CREATE INDEX "consumption_user_time_idx" ON "consumption_events" USING btree ("user_id","occurred_at");--> statement-breakpoint
+CREATE INDEX "consumption_meal_idx" ON "consumption_events" USING btree ("meal_consumption_id");--> statement-breakpoint
+CREATE INDEX "meal_consumption_user_time_idx" ON "meal_consumptions" USING btree ("user_id","consumed_at");--> statement-breakpoint
+CREATE INDEX "meal_consumption_entry_idx" ON "meal_consumptions" USING btree ("meal_plan_entry_id");--> statement-breakpoint
 CREATE INDEX "cycle_user_dates_idx" ON "meal_cycles" USING btree ("user_id","start_date","end_date");--> statement-breakpoint
 CREATE INDEX "plan_cycle_day_idx" ON "meal_plan_entries" USING btree ("cycle_id","day");--> statement-breakpoint
 CREATE UNIQUE INDEX "pantry_user_name_uq" ON "pantry_items" USING btree ("user_id","name");--> statement-breakpoint

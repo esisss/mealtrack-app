@@ -260,7 +260,7 @@ export async function getRequiredIngredientsForCycle(cycleId: string) {
 
 				// The unit of measurement (g, ml, unit, etc.)
 				baseUnit: pantryItems.baseUnit,
-
+				fixedBuyQty: pantryItems.fixedBuyQty,
 				// TOTAL quantity needed across ALL meals in the cycle
 				// This uses SQL aggregation: SUM(qty_per_serving * servings)
 				// Example: If you have rice in 3 meals (200g, 150g, 100g), this returns 450g
@@ -398,7 +398,15 @@ export async function getGroceryListForCycle(cycleId: string, userId: string) {
 
 			// Calculate how much we need to buy
 			const totalNeeded = parseFloat(item.totalRequired || '0');
-			const toBuy = Math.max(0, totalNeeded - inStock);
+			const fixedBuyQty = parseFloat(item.fixedBuyQty || '0');
+			let toBuy = Math.max(0, totalNeeded - inStock);
+			if (fixedBuyQty && fixedBuyQty > 0) {
+				if (toBuy > fixedBuyQty) {
+					toBuy = Math.ceil(toBuy / fixedBuyQty) * fixedBuyQty;
+				} else if (toBuy < fixedBuyQty) {
+					toBuy = fixedBuyQty;
+				}
+			}
 
 			return {
 				pantryItemId: item.pantryItemId,
@@ -554,6 +562,23 @@ export async function deleteShoppingListItems(listId: string) {
 		return deleted;
 	} catch (error) {
 		console.error('[deleteShoppingListItems] Error:', error);
+		throw error;
+	}
+}
+
+/**
+ * Delete a single shopping list item by ID
+ */
+export async function deleteShoppingListItem(itemId: string) {
+	try {
+		const deleted = await db
+			.delete(shoppingListItems)
+			.where(eq(shoppingListItems.id, itemId))
+			.returning();
+
+		return deleted[0] || null;
+	} catch (error) {
+		console.error('[deleteShoppingListItem] Error:', error);
 		throw error;
 	}
 }

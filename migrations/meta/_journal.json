@@ -5,29 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1761241431279,
-      "tag": "0000_rich_roughhouse",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1762288274162,
-      "tag": "0001_nasty_george_stacy",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1763180057763,
-      "tag": "0002_left_vapor",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1767755338532,
-      "tag": "0003_flashy_puff_adder",
+      "when": 1768081900014,
+      "tag": "0000_silent_ultimatum",
       "breakpoints": true
     }
   ]
