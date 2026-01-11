@@ -135,3 +135,41 @@ export async function toggleGroceryItemStatusAction(
 		};
 	}
 }
+
+/**
+ * Delete a grocery item from the shopping list
+ */
+export async function deleteGroceryItemAction(itemId: string) {
+	try {
+		const user = await getCurrentUser();
+		if (!user) {
+			return {
+				success: false,
+				message: 'User not authenticated',
+			};
+		}
+
+		const { deleteShoppingListItem } = await import('@/dal/dal');
+		const deleted = await deleteShoppingListItem(itemId);
+
+		if (!deleted) {
+			return {
+				success: false,
+				message: 'Item not found',
+			};
+		}
+
+		revalidatePath('/pantry');
+
+		return {
+			success: true,
+			message: 'Item deleted successfully',
+		};
+	} catch (error) {
+		console.error('Error deleting grocery item:', error);
+		return {
+			success: false,
+			message: `Error deleting item: ${error}`,
+		};
+	}
+}

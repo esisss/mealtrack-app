@@ -13,6 +13,7 @@ import {
 	uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
+import { number } from 'zod';
 
 export const baseUnit = pgEnum('base_unit', [
 	'g',
@@ -46,6 +47,7 @@ export const pantryItems = pgTable(
 		userId: uuid('user_id').notNull(), // FK lógica a Neon Auth
 		name: varchar('name', { length: 160 }).notNull(),
 		baseUnit: baseUnit('base_unit').notNull(), // g | ml | unit
+		fixedBuyQty: numeric('fixed_buy_qty'),
 		// conversiones opcionales por ingrediente (no globales)
 		unitToGrams: numeric('unit_to_grams'), // 1 unidad ≈ X g
 		unitToMl: numeric('unit_to_ml'), // 1 unidad ≈ X ml

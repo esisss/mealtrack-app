@@ -62,6 +62,8 @@ export const RecipeForm = ({
     if (mode === 'edit' && initialRecipe) {
       return updateRecipeAction(initialRecipe.id, formData);
     }
+
+    console.log(formData.get('fixedBuyQty'));
     return validateAndSendRecipe(formData);
   }, INITIAL_STATE);
 
@@ -105,7 +107,7 @@ export const RecipeForm = ({
   };
 
   // Handler for AddNewIngredient component
-  const handleAddNewIngredient = (ingredient: { name: string; baseUnit: PantryItemSelect['baseUnit'] }) => {
+  const handleAddNewIngredient = (ingredient: { name: string; baseUnit: PantryItemSelect['baseUnit'], fixedBuyQty?: string }) => {
     if (!ingredient.name || availableIngredients.find(ing => ing.name.toLowerCase() === ingredient.name.toLowerCase())) {
       toast.error('Ingredient name cannot be empty or already exists.');
       return;
@@ -113,13 +115,14 @@ export const RecipeForm = ({
     const newId =
       availableIngredients.length > 0
         ? (Math.max(...availableIngredients.map((i, index) => index)) + 1).toString()
-        : '1';
+        : '0';
 
     const newIngredientObject: PantryItemSelect = {
       id: newId,
       name: ingredient.name,
       userId: '',
       baseUnit: ingredient.baseUnit,
+      fixedBuyQty: ingredient.fixedBuyQty ? ingredient.fixedBuyQty : null,
       unitToGrams: null,
       unitToMl: null,
       kcalPerBaseUnit: null,
@@ -219,6 +222,7 @@ export const RecipeForm = ({
                     name={ingredient.name}
                     key={ingredient.id}
                     ingredient={ingredient}
+                    fixedBuyQty={ingredient.fixedBuyQty?.toString()}
                     qty={selection.qty}
                     index={index}
                     onQuantityChange={handleQuantityChange}
@@ -241,7 +245,7 @@ export const RecipeForm = ({
         imageUpload ? (
           <div className="mt-2">
             <input readOnly type="text" name="public_id" value={imageUpload.public_id} className='hidden' />
-            <input type="text" name="secure_url" value={imageUpload.secure_url} className='hidden' />
+            <input readOnly type="text" name="secure_url" value={imageUpload.secure_url} className='hidden' />
             <Image src={imageUpload.secure_url} alt="Recipe" width={500} height={500} className="w-full h-40 object-cover rounded-lg" />
           </div>
         ) :

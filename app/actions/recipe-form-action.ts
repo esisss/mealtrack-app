@@ -9,6 +9,7 @@ import {
 	updateRecipe,
 	updateRecipeIngredients,
 	getRecipeIngredients,
+	updateShoppingListForCycle,
 } from '@/dal/dal';
 import { getCurrentUser } from '@/lib/auth';
 import { checkArrayIncludesNewArrayBy } from '@/utils/checkArrayIncludesNewArrayBy';
@@ -30,9 +31,10 @@ export const validateAndSendRecipe = async (
 		name: string;
 		quantity: number;
 		baseUnit: string;
+		fixedBuyQty: number | undefined;
 		pantryItemId: string;
 	}> = [];
-
+	console.log('Form data:', entries);
 	for (let i = 0; ; i++) {
 		const prefix = `ingredients[${i}]`;
 		const name = formData.get(`${prefix}[name]`);
@@ -44,12 +46,17 @@ export const validateAndSendRecipe = async (
 				? Number(quantityRaw)
 				: NaN;
 		const baseUnit = (formData.get(`${prefix}[baseUnit]`) as string) || '';
+		const fixedBuyQty = formData.get(`${prefix}[fixedBuyQty]`);
 		const pantryItemId =
 			(formData.get(`${prefix}[pantryItemId]`) as string) || '';
 		ingredientsParsed.push({
 			name: String(name),
 			quantity,
 			baseUnit,
+			fixedBuyQty:
+				fixedBuyQty !== null && fixedBuyQty !== ''
+					? Number(fixedBuyQty)
+					: undefined,
 			pantryItemId,
 		});
 	}
@@ -71,6 +78,10 @@ export const validateAndSendRecipe = async (
 						.number()
 						.positive({ message: 'Quantity must be a positive number' }),
 					baseUnit: z.string().min(1, { message: 'Base unit is required' }),
+					fixedBuyQty: z
+						.number()
+						.min(100, { message: 'Fixed buy qty must be at least 100' })
+						.optional(),
 				})
 			)
 			.min(1, { message: 'At least one ingredient is required' }),
@@ -83,10 +94,10 @@ export const validateAndSendRecipe = async (
 		recipeName: formData.get('recipeName'),
 		notes: formData.get('notes'),
 		ingredients: ingredientsParsed,
-		publicImageId: formData.get('publicImageId')?.toString() || '',
-		imageUrl: formData.get('imageUrl')?.toString() || '',
+		publicImageId: formData.get('public_id')?.toString() || '',
+		imageUrl: formData.get('secure_url')?.toString() || '',
 	});
-
+	console.log(parseResult.data);
 	if (!parseResult.success) {
 		// Use Zod's error.flatten() to get a map of field errors
 		const flattened = parseResult.error.flatten();
@@ -111,6 +122,7 @@ export const validateAndSendRecipe = async (
 	).map((item) => ({
 		...item,
 		userId: user.id,
+		fixedBuyQty: item.fixedBuyQty ? item.fixedBuyQty.toString() : null,
 	}));
 	if (newPantryItems.length >= 1) {
 		console.log('New ingredient IDs to add to pantry:', newPantryItems);
@@ -224,6 +236,7 @@ export const updateRecipeAction = async (
 		name: string;
 		quantity: number;
 		baseUnit: string;
+		fixedBuyQty: number | undefined;
 		pantryItemId: string;
 	}> = [];
 
@@ -238,12 +251,17 @@ export const updateRecipeAction = async (
 				? Number(quantityRaw)
 				: NaN;
 		const baseUnit = (formData.get(`${prefix}[baseUnit]`) as string) || '';
+		const fixedBuyQty = formData.get(`${prefix}[fixedBuyQty]`);
 		const pantryItemId =
 			(formData.get(`${prefix}[pantryItemId]`) as string) || '';
 		ingredientsParsed.push({
 			name: String(name),
 			quantity,
 			baseUnit,
+			fixedBuyQty:
+				fixedBuyQty !== null && fixedBuyQty !== ''
+					? Number(fixedBuyQty)
+					: undefined,
 			pantryItemId,
 		});
 	}
@@ -265,6 +283,10 @@ export const updateRecipeAction = async (
 						.number()
 						.positive({ message: 'Quantity must be a positive number' }),
 					baseUnit: z.string().min(1, { message: 'Base unit is required' }),
+					fixedBuyQty: z
+						.number()
+						.min(100, { message: 'Fixed buy qty must be at least 100' })
+						.optional(),
 				})
 			)
 			.min(1, { message: 'At least one ingredient is required' }),
@@ -305,6 +327,7 @@ export const updateRecipeAction = async (
 	).map((item) => ({
 		...item,
 		userId: user.id,
+		fixedBuyQty: item.fixedBuyQty ? item.fixedBuyQty.toString() : null,
 	}));
 
 	if (newPantryItems.length >= 1) {
@@ -342,6 +365,7 @@ export const updateRecipeAction = async (
 	try {
 		// Update recipe
 		const updatedRecipe = await updateRecipe(recipeId, recipeUpdate);
+
 		if (!updatedRecipe) {
 			return {
 				success: false,
