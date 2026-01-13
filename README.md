@@ -1,10 +1,20 @@
+[![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Drizzle ORM](https://img.shields.io/badge/Drizzle_ORM-C5F74F?style=for-the-badge&logo=drizzle&logoColor=000000)](https://orm.drizzle.team/)
+[![Neon](https://img.shields.io/badge/Neon-00E599?style=for-the-badge&logo=neon&logoColor=000000)](https://neon.tech/)
+[![Stack Auth](https://img.shields.io/badge/Stack_Auth-000000?style=for-the-badge&logo=stackauth&logoColor=white)](https://stack-auth.com/)
+[![shadcn/ui](https://img.shields.io/badge/shadcn/ui-000000?style=for-the-badge&logo=shadcnui&logoColor=white)](https://ui.shadcn.com/)
+
+[Live Demo](https://mealtrack-app.vercel.app/)
+
 # MealTrack App 🍲
 
 MealTrack is a modern, full-stack web application designed to help you manage your pantry, plan your meals, and track your grocery shopping with ease. Built with performance and developer experience in mind.
 
 ## 🚀 Vision & Contributions
 
-This project is open-source and we **strongly encourage** contributions! Whether it's fixing a bug, adding a new feature, or improving documentation, your help is welcome.
+This project is open-source and I **strongly encourage** contributions! Whether it's fixing a bug, adding a new feature, or improving documentation, your help is welcome.
 
 Feel free to fork this repository, make your changes, and submit a Pull Request. If you have ideas or feedback, don't hesitate to open an issue.
 
