@@ -15,7 +15,7 @@ Feel free to fork this repository, make your changes, and submit a Pull Request.
 - **ORM**: [Drizzle ORM](https://orm.drizzle.team/)
 - **Authentication**: [Stack Auth](https://stack-auth.com/)
 - **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
-- **UI Components**: [Radix UI](https://www.radix-ui.com/) & [Lucide React](https://lucide.dev/)
+- **UI Components**: [shadcn/ui](https://ui.shadcn.com/), [Radix UI](https://www.radix-ui.com/) & [Lucide React](https://lucide.dev/)
 - **Deployment**: [Vercel](https://vercel.com/)
 
 ## 🏗️ Database Architecture & Flexibility
