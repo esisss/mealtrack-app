@@ -52,7 +52,7 @@ export const QuickActions = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {actions.map((action) => (
                     <Link href={action.href} key={action.title}>
-                        <Card className="hover:shadow-md transition-shadow cursor-pointer border-none shadow-sm dark:bg-gray-800/50">
+                        <Card className="hover:shadow-md transition-shadow cursor-pointer border-none shadow-sm ">
                             <CardContent className="p-4 flex items-center gap-4">
                                 <div className={`p-3 rounded-full ${action.bg} dark:bg-gray-700`}>
                                     <div className={action.color}>
