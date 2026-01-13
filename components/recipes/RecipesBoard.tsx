@@ -13,6 +13,7 @@ import { Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { RecipeCard } from "./RecipeCard";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 
 type Recipe = InferSelectModel<typeof recipes>;
 type PantryItem = InferSelectModel<typeof pantryItems>;
@@ -23,6 +24,15 @@ export default function RecipesBoard({ recipes, pantryItems }: { recipes?: Recip
     const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
     const [recipeIngredients, setRecipeIngredients] = useState<any[]>([]);
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
+    const [deleteDialog, setDeleteDialog] = useState<{
+        isOpen: boolean;
+        recipeId: string | null;
+        recipeName: string;
+    }>({
+        isOpen: false,
+        recipeId: null,
+        recipeName: "",
+    });
     const router = useRouter();
 
     const openModal = () => setIsModalOpen(true);
@@ -46,10 +56,18 @@ export default function RecipesBoard({ recipes, pantryItems }: { recipes?: Recip
         router.refresh();
     };
 
-    const handleDelete = async (recipeId: string) => {
-        if (!confirm("Are you sure you want to delete this recipe? This action cannot be undone.")) {
-            return;
-        }
+    const handleDelete = (recipeId: string) => {
+        const recipe = recipes?.find(r => r.id === recipeId);
+        setDeleteDialog({
+            isOpen: true,
+            recipeId,
+            recipeName: recipe?.name || "this recipe",
+        });
+    };
+
+    const confirmDelete = async () => {
+        const recipeId = deleteDialog.recipeId;
+        if (!recipeId) return;
 
         setIsDeleting(recipeId);
         const result = await deleteRecipeAction(recipeId);
@@ -61,6 +79,7 @@ export default function RecipesBoard({ recipes, pantryItems }: { recipes?: Recip
             toast.error(result.message || "Failed to delete recipe");
         }
         setIsDeleting(null);
+        setDeleteDialog({ isOpen: false, recipeId: null, recipeName: "" });
     };
 
     return (
@@ -105,6 +124,15 @@ export default function RecipesBoard({ recipes, pantryItems }: { recipes?: Recip
                     />
                 )}
             </Modal>
+            <ConfirmationDialog
+                isOpen={deleteDialog.isOpen}
+                onClose={() => setDeleteDialog(prev => ({ ...prev, isOpen: false }))}
+                onConfirm={confirmDelete}
+                title="Delete Recipe"
+                description={`Are you sure you want to delete "${deleteDialog.recipeName}"? This action cannot be undone.`}
+                confirmText="Delete"
+                variant="destructive"
+            />
         </div>
     );
 }

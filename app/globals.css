@@ -363,3 +363,7 @@ body {
 		background: oklch(0.78 0.15 145 / 0.4);
 	}
 }
+/* Cloudinary Upload Widget overlay (the screen backdrop) */
+.dwGmYG {
+	background-color: black !important;
+}

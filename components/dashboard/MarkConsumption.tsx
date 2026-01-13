@@ -5,6 +5,8 @@ import { RecipeSelect } from "@/types"
 import { CheckCircle, AlertCircle, Check } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
+import { useState } from "react"
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog"
 
 
 export const MarkConsumption = ({
@@ -21,14 +23,41 @@ export const MarkConsumption = ({
         missingIngredients: { name: string; required: number; inStock: number }[];
     }
 }) => {
+    const [dialog, setDialog] = useState<{
+        isOpen: boolean;
+        type: "confirm" | "alert";
+        title: string;
+        description: string;
+        onConfirm?: () => void;
+    }>({
+        isOpen: false,
+        type: "confirm",
+        title: "",
+        description: "",
+    });
+
     const nextMealData = nextMeal?.[0]
-    const markConsumption = async () => {
-        if (confirm(`Are you sure you want to mark "${nextMealData?.name}" as consumed?`)) {
-            const result = await markConsumptionAction(userId, mealPlanEntryId)
-            if (!result.success) {
-                alert('Failed to mark consumption')
-            }
+
+    const handleMarkConsumption = async () => {
+        const result = await markConsumptionAction(userId, mealPlanEntryId)
+        if (!result.success) {
+            setDialog({
+                isOpen: true,
+                type: "alert",
+                title: "Error",
+                description: "Failed to mark consumption",
+            });
         }
+    }
+
+    const markConsumption = () => {
+        setDialog({
+            isOpen: true,
+            type: "confirm",
+            title: "Mark Consumption",
+            description: `Are you sure you want to mark "${nextMealData?.name}" as consumed?`,
+            onConfirm: handleMarkConsumption,
+        });
     }
     if (!nextMealData) {
         return (
@@ -85,6 +114,15 @@ export const MarkConsumption = ({
                     )}
                 </div>
             </div>
+            <ConfirmationDialog
+                isOpen={dialog.isOpen}
+                type={dialog.type}
+                title={dialog.title}
+                description={dialog.description}
+                onConfirm={dialog.onConfirm}
+                onClose={() => setDialog(prev => ({ ...prev, isOpen: false }))}
+                variant={dialog.type === "confirm" || dialog.type === "alert" && dialog.title === "Error" ? "destructive" : "default"}
+            />
         </div>
     )
 }

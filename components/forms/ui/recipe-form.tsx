@@ -27,6 +27,31 @@ const INITIAL_STATE: RecipeActionResponse = {
   errors: {},
 };
 
+export const CLOUDINARY_WIDGET_STYLES = {
+  palette: {
+    window: "rgba(17, 24, 39, 0.92)",
+    windowBorder: "rgba(148, 163, 184, 0.25)",
+    tabIcon: "#34D399",
+    inactiveTabIcon: "rgba(148, 163, 184, 0.75)",
+    menuIcons: "rgba(226, 232, 240, 0.75)",
+    textLight: "#F8FAFC",
+    textDark: "#0F172A",
+    action: "#34D399",
+    error: "#FB7185",
+    inProgress: "#60A5FA",
+    complete: "#34D399",
+    sourceBg: "rgba(15, 23, 42, 0.55)",
+  },
+  fonts: {
+    default: null,
+    "'Inter', sans-serif": {
+      url: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap",
+      active: true,
+    },
+  },
+};
+
+
 interface RecipeFormProps {
   onSuccess?: () => void;
   pantryItems?: PantryItemSelect[];
@@ -272,7 +297,11 @@ export const RecipeForm = ({
                     <input readOnly type="text" name="secure_url" value={imageUpload.secure_url} className="hidden" />
                     <Image src={imageUpload.secure_url} alt="Recipe" fill className="object-cover" />
                     <CldUploadWidget
-                      options={{ maxFiles: 1, uploadPreset: 'mealwisepreset' }}
+                      options={{
+                        maxFiles: 1,
+                        uploadPreset: 'mealwisepreset',
+                        styles: CLOUDINARY_WIDGET_STYLES
+                      }}
                       onSuccess={handleImageUpload}
                     >
                       {({ open }) => (
@@ -287,12 +316,16 @@ export const RecipeForm = ({
                   </>
                 ) : (
                   <CldUploadWidget
-                    options={{ maxFiles: 1, uploadPreset: 'mealwisepreset' }}
+                    options={{
+                      maxFiles: 1,
+                      uploadPreset: 'mealwisepreset',
+                      styles: CLOUDINARY_WIDGET_STYLES
+                    }}
                     onSuccess={handleImageUpload}
                     onUploadAdded={() => setImageUploading(true)}
                   >
                     {({ open }) => (
-                      <Button onClick={(e) => { e.preventDefault(); open() }} variant="ghost" className="flex flex-col gap-2 h-auto py-8 hover:bg-transparent text-gray-400">
+                      <Button onClick={(e) => { e.preventDefault(); open() }} variant="ghost" className="cursor-pointer flex flex-col gap-2 h-auto py-8 dark:hover:bg-transparent hover:bg-transparent hover:text-emerald-600 dark:hover:text-emerald-400 text-gray-400">
                         <div className="p-3 bg-white dark:bg-gray-800 rounded-full shadow-sm">
                           <ImageIcon className="h-6 w-6" />
                         </div>

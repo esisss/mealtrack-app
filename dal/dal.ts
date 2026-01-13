@@ -265,23 +265,7 @@ export async function removeMealPlanEntry(entryId: string) {
 // ============================================
 
 /**
- * Query 1: Calculate Required Ingredients for a Cycle
- *
- * This function answers: "What ingredients do I need for all meals in this cycle?"
- *
- * HOW IT WORKS:
- * 1. Start from mealPlanEntries (the meals planned for the week)
- * 2. Join with recipeIngredients to get what ingredients each recipe needs
- * 3. Join with pantryItems to get the ingredient details (name, unit, etc.)
- * 4. Multiply qty_per_serving × servings to get total needed
- * 5. Group by pantryItemId and SUM to get total quantity needed
- *
- * DRIZZLE CONCEPTS USED:
- * - .select() with custom fields: We specify exactly what columns we want
- * - .from() and .leftJoin(): Connect tables together (like SQL JOIN)
- * - .where(): Filter results (only this cycle's entries)
- * - sqlAgg`...`: Write raw SQL for complex calculations (SUM, multiplication)
- * - .groupBy(): Combine rows with the same pantryItemId
+ * Calculate Required Ingredients for a Cycle
  */
 export async function getRequiredIngredientsForCycle(cycleId: string) {
 	return (
@@ -336,26 +320,7 @@ export async function getRequiredIngredientsForCycle(cycleId: string) {
 }
 
 /**
- * Query 2: Get Current Stock
- *
- * This function answers: "What ingredients do I currently have in my pantry?"
- *
- * HOW IT WORKS:
- * 1. Start from stockLots (individual purchases/additions to pantry)
- * 2. Join with pantryItems to get ingredient details
- * 3. SUM the qty_remaining for each ingredient (you might have multiple lots)
- * 4. Group by pantryItemId to get total stock per ingredient
- *
- * EXAMPLE:
- * You bought rice 3 times:
- * - Lot 1: 500g remaining
- * - Lot 2: 200g remaining
- * - Lot 3: 100g remaining
- * This query returns: Rice = 800g total
- *
- * DRIZZLE CONCEPTS:
- * - Similar to Query 1, but simpler (only 2 tables)
- * - Uses SUM to aggregate multiple stock lots into one total
+ * Get Current Stock
  */
 export async function getCurrentStock(userId: string) {
 	return (
@@ -389,33 +354,16 @@ export async function getCurrentStock(userId: string) {
 }
 
 /**
- * Query 3: Calculate Grocery List (What to Buy)
- *
- * This function answers: "What do I need to buy for this cycle?"
- *
- * HOW IT WORKS:
- * 1. Get required ingredients from Query 1
- * 2. Get current stock from Query 2
- * 3. Calculate: toBuy = required - stock
- * 4. Only return items where toBuy > 0
- *
- * NOTE: This is a "composite" query - it calls the other two queries
- * and processes the results in JavaScript. This is simpler than doing
- * a complex SQL query with multiple subqueries.
- *
- * ALTERNATIVE APPROACH:
- * You could also do this in a single SQL query using subqueries or CTEs
- * (Common Table Expressions), but this approach is easier to understand
- * and maintain.
+ * Calculate Grocery List (What to Buy)
  */
 export async function getGroceryListForCycle(cycleId: string, userId: string) {
-	// Step 1: Get what we need for the cycle
+	// Get what we need for the cycle
 	const required = await getRequiredIngredientsForCycle(cycleId);
 
-	// Step 2: Get what we currently have in stock
+	// Get what we currently have in stock
 	const stock = await getCurrentStock(userId);
 
-	// Step 3: Create a lookup map for quick access
+	// Create a lookup map for quick access
 	// This is a JavaScript Map: pantryItemId -> stock quantity
 	// Example: { "uuid-123": "500", "uuid-456": "200" }
 	const stockMap = new Map(
@@ -425,7 +373,7 @@ export async function getGroceryListForCycle(cycleId: string, userId: string) {
 		])
 	);
 
-	// Step 4: Calculate what to buy for each ingredient
+	// Calculate what to buy for each ingredient
 	const groceryList = required
 		.map((item) => {
 			// Get current stock for this ingredient (0 if not in stock)
@@ -435,7 +383,7 @@ export async function getGroceryListForCycle(cycleId: string, userId: string) {
 			const totalNeeded = parseFloat(item.totalRequired || '0');
 			const fixedBuyQty = parseFloat(item.fixedBuyQty || '0');
 			let toBuy = Math.max(0, totalNeeded - inStock);
-			if (fixedBuyQty && fixedBuyQty > 0) {
+			if (fixedBuyQty && fixedBuyQty > 0 && toBuy > 0) {
 				if (toBuy > fixedBuyQty) {
 					toBuy = Math.ceil(toBuy / fixedBuyQty) * fixedBuyQty;
 				} else if (toBuy < fixedBuyQty) {
@@ -900,7 +848,7 @@ export async function markMealConsumption(
 	notes?: string
 ) {
 	try {
-		// 1. Get the meal plan entry to extract recipeId and servings
+		// Get the meal plan entry to extract recipeId and servings
 		const entry = await db
 			.select()
 			.from(mealPlanEntries)
@@ -911,13 +859,13 @@ export async function markMealConsumption(
 			throw new Error('Meal plan entry not found');
 		}
 
-		// 2. Mark the meal plan entry as done
+		// Mark the meal plan entry as done
 		await db
 			.update(mealPlanEntries)
 			.set({ done: true })
 			.where(eq(mealPlanEntries.id, mealPlanEntryId));
 
-		// 3. Create meal consumption record
+		// Create meal consumption record
 		const consumption = await db
 			.insert(mealConsumptions)
 			.values({
@@ -930,7 +878,7 @@ export async function markMealConsumption(
 
 		const mealConsumptionId = consumption[0].id;
 
-		// 4. Record ingredient consumption events
+		// Record ingredient consumption events
 		// Get ingredients for this recipe
 		const ingredients = await getRecipeIngredients(entry[0].recipeId);
 
@@ -1061,7 +1009,7 @@ export async function checkStockForRecipe(
 	servings: number = 1
 ) {
 	try {
-		// 1. Get recipe ingredients with their names
+		// Get recipe ingredients with their names
 		const ingredients = await db
 			.select({
 				pantryItemId: recipeIngredients.pantryItemId,
@@ -1075,13 +1023,13 @@ export async function checkStockForRecipe(
 		if (ingredients.length === 0)
 			return { hasEnoughStock: true, missingIngredients: [] };
 
-		// 2. Get current stock for the user
+		// Get current stock for the user
 		const stock = await getCurrentStock(userId);
 		const stockMap = new Map(
 			stock.map((s) => [s.pantryItemId, parseFloat(s.totalInStock || '0')])
 		);
 
-		// 3. Compare required vs stock
+		// Compare required vs stock
 		const missingIngredients = ingredients
 			.map((ing) => {
 				const required = parseFloat(ing.qtyPerServing) * servings;
@@ -1112,11 +1060,11 @@ export async function checkStockForRecipe(
  */
 export async function getCookableRecipes(userId: string) {
 	try {
-		// 1. Get all recipes for this user
+		// Get all recipes for this user
 		const userRecipes = await getRecipes(userId);
 		if (userRecipes.length === 0) return [];
 
-		// 2. Get all ingredients for these recipes in one batch
+		// Get all ingredients for these recipes in one batch
 		const recipeIds = userRecipes.map((r) => r.id);
 		const allIngredients = await db
 			.select({
@@ -1127,13 +1075,13 @@ export async function getCookableRecipes(userId: string) {
 			.from(recipeIngredients)
 			.where(inArray(recipeIngredients.recipeId, recipeIds));
 
-		// 3. Get current stock
+		// Get current stock
 		const stock = await getCurrentStock(userId);
 		const stockMap = new Map(
 			stock.map((s) => [s.pantryItemId, parseFloat(s.totalInStock || '0')])
 		);
 
-		// 4. Group ingredients by recipe for easy checking
+		// Group ingredients by recipe for easy checking
 		const ingredientsByRecipe = new Map<string, typeof allIngredients>();
 		for (const ing of allIngredients) {
 			const existing = ingredientsByRecipe.get(ing.recipeId) || [];
@@ -1141,7 +1089,7 @@ export async function getCookableRecipes(userId: string) {
 			ingredientsByRecipe.set(ing.recipeId, existing);
 		}
 
-		// 5. Filter recipes where EVERY ingredient is in stock for 1 serving
+		// Filter recipes where EVERY ingredient is in stock for 1 serving
 		const cookableRecipes = userRecipes.filter((recipe) => {
 			const ingredients = ingredientsByRecipe.get(recipe.id) || [];
 			if (ingredients.length === 0) return false; // Skip recipes with no ingredients
@@ -1245,7 +1193,7 @@ export async function getLowStockItems(userId: string) {
  */
 export async function getConsumptionStreak(userId: string) {
 	try {
-		// 1. Get all entries for this user ordered by day desc
+		// Get all entries for this user ordered by day desc
 		const entries = await db
 			.select({
 				day: mealPlanEntries.day,
@@ -1258,14 +1206,14 @@ export async function getConsumptionStreak(userId: string) {
 
 		if (entries.length === 0) return 0;
 
-		// 2. Group by day and check if all are done
+		// Group by day and check if all are done
 		const dayStatus = new Map<string, boolean>();
 		for (const entry of entries) {
 			const current = dayStatus.get(entry.day) ?? true;
 			dayStatus.set(entry.day, current && entry.done);
 		}
 
-		// 3. Get sorted list of dates with planned meals
+		// Get sorted list of dates with planned meals
 		const sortedDates = Array.from(dayStatus.keys()).sort((a, b) =>
 			b.localeCompare(a)
 		);
