@@ -31,9 +31,10 @@ export const RecipeCard = ({ recipe, isDeleting, openEditModal, handleDelete }: 
                 <h2 className="font-bold text-lg mb-2">{recipe.name}</h2>
                 <DropdownMenu>
                     <DropdownMenuTrigger>
-                        <Button variant="outline" className='cursor-pointer' size="icon">
+                        <div className="cursor-pointer border border-white/10 p-2 rounded-md outline-none selected:outline-none focus:outline-none">
+
                             <EllipsisVertical size={20} />
-                        </Button>
+                        </div>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
                         <DropdownMenuLabel>Recipe Actions</DropdownMenuLabel>

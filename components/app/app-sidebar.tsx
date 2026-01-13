@@ -1,3 +1,4 @@
+"use client";
 import {
   Calendar,
   CookingPot,
@@ -16,9 +17,11 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import Image from "next/image";
 import Link from "next/link";
+import { isDesktop } from "@/utils/iseDesktopSized";
 
 const items = [
   {
@@ -37,7 +40,7 @@ const items = [
     icon: Calendar,
   },
   { title: "Pantry", url: "/pantry", icon: Refrigerator },
-  { title: "Settings", url: "/settings", icon: Settings },
+  // { title: "Settings", url: "/settings", icon: Settings },
 ];
 
 const t = {
@@ -45,9 +48,10 @@ const t = {
 };
 
 export function AppSidebar() {
+  const { open, setOpen } = useSidebar();
   return (
     <Sidebar>
-      <SidebarContent>
+      <SidebarContent >
         <SidebarGroup>
           <SidebarTrigger className="sm:hidden absolute right-3 top-3" />
           <SidebarGroupContent className="h-[calc(100vh-2rem)] flex flex-col justify-between">
@@ -55,7 +59,7 @@ export function AppSidebar() {
               <h2 className="text-xl font-bold italic ml-2 my-2">MealWise</h2>
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton onClick={() => setOpen(isDesktop() ? true : !open)} asChild>
                     <Link href={item.url}>
                       <item.icon />
                       <span>{item.title}</span>
