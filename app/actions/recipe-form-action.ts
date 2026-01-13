@@ -87,7 +87,27 @@ export const validateAndSendRecipe = async (
 			.min(1, { message: 'At least one ingredient is required' }),
 		publicImageId: z.string().optional(),
 		imageUrl: z.string().optional(),
+		cookTime: z.number().optional(),
+		prepTime: z.number().optional(),
+		servings: z.number().optional(),
+		instructions: z.array(z.string()).optional(),
+		tags: z.array(z.string()).optional(),
 	});
+
+	// Build instructions and tags from form data
+	const instructions: string[] = [];
+	for (let i = 0; ; i++) {
+		const instruction = formData.get(`instructions[${i}]`);
+		if (!instruction) break;
+		instructions.push(String(instruction));
+	}
+
+	const tags: string[] = [];
+	for (let i = 0; ; i++) {
+		const tag = formData.get(`tags[${i}]`);
+		if (!tag) break;
+		tags.push(String(tag));
+	}
 
 	// Run validation and return structured response
 	const parseResult = await schema.safeParseAsync({
@@ -96,6 +116,17 @@ export const validateAndSendRecipe = async (
 		ingredients: ingredientsParsed,
 		publicImageId: formData.get('public_id')?.toString() || '',
 		imageUrl: formData.get('secure_url')?.toString() || '',
+		cookTime: formData.get('cookTime')
+			? Number(formData.get('cookTime'))
+			: undefined,
+		prepTime: formData.get('prepTime')
+			? Number(formData.get('prepTime'))
+			: undefined,
+		servings: formData.get('servings')
+			? Number(formData.get('servings'))
+			: undefined,
+		instructions: instructions.length > 0 ? instructions : undefined,
+		tags: tags.length > 0 ? tags : undefined,
 	});
 	console.log(parseResult.data);
 	if (!parseResult.success) {
@@ -159,6 +190,11 @@ export const validateAndSendRecipe = async (
 		userId: user.id,
 		publicImageId: parseResult.data.publicImageId,
 		imageUrl: parseResult.data.imageUrl,
+		cookTime: parseResult.data.cookTime?.toString(),
+		prepTime: parseResult.data.prepTime?.toString(),
+		servings: parseResult.data.servings?.toString(),
+		instructions: parseResult.data.instructions,
+		tags: parseResult.data.tags,
 	};
 	const addedRecipe = await addRecipe(recipe);
 	if (!addedRecipe) {
@@ -292,7 +328,27 @@ export const updateRecipeAction = async (
 			.min(1, { message: 'At least one ingredient is required' }),
 		publicImageId: z.string().optional(),
 		imageUrl: z.string().optional(),
+		cookTime: z.number().optional(),
+		prepTime: z.number().optional(),
+		servings: z.number().optional(),
+		instructions: z.array(z.string()).optional(),
+		tags: z.array(z.string()).optional(),
 	});
+
+	// Build instructions and tags from form data
+	const instructions: string[] = [];
+	for (let i = 0; ; i++) {
+		const instruction = formData.get(`instructions[${i}]`);
+		if (!instruction) break;
+		instructions.push(String(instruction));
+	}
+
+	const tags: string[] = [];
+	for (let i = 0; ; i++) {
+		const tag = formData.get(`tags[${i}]`);
+		if (!tag) break;
+		tags.push(String(tag));
+	}
 
 	const parseResult = await schema.safeParseAsync({
 		recipeName: formData.get('recipeName'),
@@ -300,6 +356,17 @@ export const updateRecipeAction = async (
 		ingredients: ingredientsParsed,
 		publicImageId: formData.get('public_id')?.toString() || '',
 		imageUrl: formData.get('secure_url')?.toString() || '',
+		cookTime: formData.get('cookTime')
+			? Number(formData.get('cookTime'))
+			: undefined,
+		prepTime: formData.get('prepTime')
+			? Number(formData.get('prepTime'))
+			: undefined,
+		servings: formData.get('servings')
+			? Number(formData.get('servings'))
+			: undefined,
+		instructions: instructions.length > 0 ? instructions : undefined,
+		tags: tags.length > 0 ? tags : undefined,
 	});
 
 	if (!parseResult.success) {
@@ -360,6 +427,11 @@ export const updateRecipeAction = async (
 		notes: parseResult.data.notes,
 		publicImageId: parseResult.data.publicImageId,
 		imageUrl: parseResult.data.imageUrl,
+		cookTime: parseResult.data.cookTime?.toString(),
+		prepTime: parseResult.data.prepTime?.toString(),
+		servings: parseResult.data.servings?.toString(),
+		instructions: parseResult.data.instructions,
+		tags: parseResult.data.tags,
 	};
 
 	try {

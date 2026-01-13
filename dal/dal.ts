@@ -24,6 +24,7 @@ import {
 	MealConsumptionInsert,
 	ConsumptionEventInsert,
 } from '@/types';
+import { formatLocalDate } from '@/lib/date-utils';
 import { neon } from '@neondatabase/serverless';
 import {
 	desc,
@@ -72,6 +73,38 @@ export const getRecipes = async (userId: string) => {
 
 export const getRecipeById = async (recipeId: string) => {
 	return db.select().from(recipes).where(eq(recipes.id, recipeId)).limit(1);
+};
+
+export const getFullRecipeById = async (recipeId: string) => {
+	const recipe = await db
+		.select()
+		.from(recipes)
+		.where(eq(recipes.id, recipeId))
+		.limit(1);
+
+	if (recipe.length === 0) return null;
+
+	const ingredients = await db
+		.select({
+			id: recipeIngredients.id,
+			pantryItemId: recipeIngredients.pantryItemId,
+			qtyPerServing: recipeIngredients.qtyPerServing,
+			notes: recipeIngredients.notes,
+			name: pantryItems.name,
+			baseUnit: pantryItems.baseUnit,
+			kcalPerBaseUnit: pantryItems.kcalPerBaseUnit,
+			proteinPerBaseUnit: pantryItems.proteinPerBaseUnit,
+			carbsPerBaseUnit: pantryItems.carbsPerBaseUnit,
+			fatPerBaseUnit: pantryItems.fatPerBaseUnit,
+		})
+		.from(recipeIngredients)
+		.leftJoin(pantryItems, eq(recipeIngredients.pantryItemId, pantryItems.id))
+		.where(eq(recipeIngredients.recipeId, recipeId));
+
+	return {
+		...recipe[0],
+		ingredients,
+	};
 };
 
 //Recipe Ingredient DAL functions
@@ -129,9 +162,10 @@ export async function getOrCreateCurrentCycle(userId: string, date: Date) {
 	startOfWeek.setDate(diff);
 	startOfWeek.setHours(0, 0, 0, 0);
 
+	const startStr = formatLocalDate(startOfWeek);
 	const endOfWeek = new Date(startOfWeek);
 	endOfWeek.setDate(startOfWeek.getDate() + 6);
-	endOfWeek.setHours(23, 59, 59, 999);
+	const endStr = formatLocalDate(endOfWeek);
 
 	const existingCycle = await db
 		.select()
@@ -139,8 +173,8 @@ export async function getOrCreateCurrentCycle(userId: string, date: Date) {
 		.where(
 			and(
 				eq(mealCycles.userId, userId),
-				gte(mealCycles.startDate, startOfWeek.toISOString()),
-				lte(mealCycles.endDate, endOfWeek.toISOString())
+				gte(mealCycles.startDate, startStr),
+				lte(mealCycles.endDate, endStr)
 			)
 		)
 		.limit(1);
@@ -153,8 +187,8 @@ export async function getOrCreateCurrentCycle(userId: string, date: Date) {
 		.insert(mealCycles)
 		.values({
 			userId,
-			startDate: startOfWeek.toISOString(),
-			endDate: endOfWeek.toISOString(),
+			startDate: startStr,
+			endDate: endStr,
 			status: 'planning',
 		})
 		.returning();
@@ -171,9 +205,10 @@ export async function getThisWeekCycle(
 	startOfWeek.setDate(diff);
 	startOfWeek.setHours(0, 0, 0, 0);
 
+	const startStr = formatLocalDate(startOfWeek);
 	const endOfWeek = new Date(startOfWeek);
 	endOfWeek.setDate(startOfWeek.getDate() + 6);
-	endOfWeek.setHours(23, 59, 59, 999);
+	const endStr = formatLocalDate(endOfWeek);
 
 	const existingCycle = await db
 		.select()
@@ -181,8 +216,8 @@ export async function getThisWeekCycle(
 		.where(
 			and(
 				eq(mealCycles.userId, userId),
-				gte(mealCycles.startDate, startOfWeek.toISOString()),
-				lte(mealCycles.endDate, endOfWeek.toISOString())
+				gte(mealCycles.startDate, startStr),
+				lte(mealCycles.endDate, endStr)
 			)
 		)
 		.limit(1);
@@ -1121,6 +1156,153 @@ export async function getCookableRecipes(userId: string) {
 		return cookableRecipes;
 	} catch (error) {
 		console.error('[getCookableRecipes] Error:', error);
+		throw error;
+	}
+}
+
+/**
+ * Gets stock lots that are expiring within a certain threshold of days.
+ */
+export async function getExpiringStock(
+	userId: string,
+	daysThreshold: number = 3
+) {
+	try {
+		const now = new Date();
+		const thresholdDate = new Date();
+		thresholdDate.setDate(now.getDate() + daysThreshold);
+
+		// Format to YYYY-MM-DD for comparison with 'date' columns
+		const nowStr = formatLocalDate(now);
+		const thresholdStr = formatLocalDate(thresholdDate);
+
+		return await db
+			.select({
+				id: stockLots.id,
+				pantryItemId: stockLots.pantryItemId,
+				ingredientName: pantryItems.name,
+				baseUnit: pantryItems.baseUnit,
+				qtyRemaining: stockLots.qtyRemaining,
+				expiresAt: stockLots.expiresAt,
+			})
+			.from(stockLots)
+			.leftJoin(pantryItems, eq(stockLots.pantryItemId, pantryItems.id))
+			.where(
+				and(
+					eq(stockLots.userId, userId),
+					sqlAgg`CAST(${stockLots.qtyRemaining} AS NUMERIC) > 0`,
+					gte(stockLots.expiresAt, nowStr),
+					lte(stockLots.expiresAt, thresholdStr)
+				)
+			)
+			.orderBy(stockLots.expiresAt);
+	} catch (error) {
+		console.error('[getExpiringStock] Error:', error);
+		throw error;
+	}
+}
+
+/**
+ * Gets pantry items where the total stock is less than 20% of the fixed buy quantity.
+ */
+export async function getLowStockItems(userId: string) {
+	try {
+		return await db
+			.select({
+				id: pantryItems.id,
+				name: pantryItems.name,
+				baseUnit: pantryItems.baseUnit,
+				fixedBuyQty: pantryItems.fixedBuyQty,
+				totalInStock: sqlAgg<string>`
+					COALESCE(SUM(CAST(${stockLots.qtyRemaining} AS NUMERIC)), 0)
+				`.as('total_in_stock'),
+			})
+			.from(pantryItems)
+			.leftJoin(stockLots, eq(pantryItems.id, stockLots.pantryItemId))
+			.where(
+				and(
+					eq(pantryItems.userId, userId),
+					sqlAgg`CAST(${pantryItems.fixedBuyQty} AS NUMERIC) > 0`
+				)
+			)
+			.groupBy(
+				pantryItems.id,
+				pantryItems.name,
+				pantryItems.baseUnit,
+				pantryItems.fixedBuyQty
+			)
+			.having(
+				sqlAgg`COALESCE(SUM(CAST(${stockLots.qtyRemaining} AS NUMERIC)), 0) <= 0.2 * CAST(${pantryItems.fixedBuyQty} AS NUMERIC)`
+			);
+	} catch (error) {
+		console.error('[getLowStockItems] Error:', error);
+		throw error;
+	}
+}
+
+/**
+ * Calculates the consecutive days of completing all planned meals.
+ */
+export async function getConsumptionStreak(userId: string) {
+	try {
+		// 1. Get all entries for this user ordered by day desc
+		const entries = await db
+			.select({
+				day: mealPlanEntries.day,
+				done: mealPlanEntries.done,
+			})
+			.from(mealPlanEntries)
+			.innerJoin(mealCycles, eq(mealPlanEntries.cycleId, mealCycles.id))
+			.where(eq(mealCycles.userId, userId))
+			.orderBy(desc(mealPlanEntries.day));
+
+		if (entries.length === 0) return 0;
+
+		// 2. Group by day and check if all are done
+		const dayStatus = new Map<string, boolean>();
+		for (const entry of entries) {
+			const current = dayStatus.get(entry.day) ?? true;
+			dayStatus.set(entry.day, current && entry.done);
+		}
+
+		// 3. Get sorted list of dates with planned meals
+		const sortedDates = Array.from(dayStatus.keys()).sort((a, b) =>
+			b.localeCompare(a)
+		);
+
+		const today = formatLocalDate(new Date());
+
+		let streak = 0;
+		let checkDate = today;
+		let foundIncomplete = false;
+
+		// We check backwards from today
+		// If today has plans and is not done, it doesn't break the streak yet IF yesterday was done
+		// But it won't be counted in the streak until it's finished.
+
+		for (const date of sortedDates) {
+			// If we skipped today because it's in progress, that's fine.
+			// But if we find a date in the past that had plans and wasn't finished, streak ends.
+			if (date > today) continue; // Future plans don't affect current streak
+
+			const isDone = dayStatus.get(date);
+
+			if (isDone) {
+				streak++;
+			} else {
+				// If today is incomplete, it doesn't break a streak from yesterday.
+				// But if anything older than today is incomplete, the streak is broken.
+				if (date < today) {
+					break;
+				}
+				// If today is incomplete, we just move on to check yesterday and beyond.
+				// The streak will be whatever was completed before today.
+			}
+		}
+
+		return streak;
+	} catch (error) {
+		console.error('[getConsumptionStreak] Error:', error);
 		throw error;
 	}
 }

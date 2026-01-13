@@ -6,6 +6,7 @@ import { startTransition, Suspense, useOptimistic, useState } from 'react';
 import toast from 'react-hot-toast';
 import { addMealPlanEntryAction, removeMealPlanEntryAction } from '@/app/actions/planneractions';
 import { DayIndicator } from '../pantry/grocery/DayIndicator';
+import { parseLocalDate, formatLocalDate, getTodayLocal } from '@/lib/date-utils';
 
 interface PlannerBoardProps {
     cycle: MealCycleSelect;
@@ -21,8 +22,8 @@ type OptimisticAction =
     | { type: 'remove'; entryId: string };
 
 export function PlannerBoard({ cycle, entries, recipes, userId }: PlannerBoardProps) {
-    const startDate = new Date(cycle.startDate);
-    const [selectedDay, setSelectedDay] = useState<Date>(new Date());
+    const startDate = parseLocalDate(cycle.startDate);
+    const [selectedDay, setSelectedDay] = useState<Date>(getTodayLocal());
 
     const handleDayClick = (day: Date) => {
         setSelectedDay(day);
@@ -88,10 +89,9 @@ export function PlannerBoard({ cycle, entries, recipes, userId }: PlannerBoardPr
             }
         })
     };
-    const dayStr = selectedDay?.toISOString().split('T')[0];
+    const dayStr = formatLocalDate(selectedDay);
     const dayEntries = optimisticEntries.filter((e) => {
-        const entryDateStr = new Date(e.day).toISOString().split('T')[0];
-        return entryDateStr === dayStr;
+        return e.day === dayStr;
     });
 
 
@@ -121,7 +121,7 @@ export function PlannerBoard({ cycle, entries, recipes, userId }: PlannerBoardPr
                         {startDate.toLocaleDateString()} -{' '}
                         {new Date(cycle.endDate).toLocaleDateString()}
                     </div>
-                    <DayIndicator onDayClick={handleDayClick} days={days} />
+                    <DayIndicator onDayClick={handleDayClick} days={days} selectedDay={selectedDay} />
                 </div>
             </div>
 

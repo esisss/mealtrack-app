@@ -48,7 +48,7 @@ export function Modal({ children, isOpen, onClose }: ModalProps) {
       onClick={onClose}
     >
       <div
-        className="relative bg-sidebar rounded-lg shadow-xl p-6 w-full max-w-md"
+        className="relative bg-sidebar rounded-lg shadow-xl p-6 w-full max-w-[100vw] sm:max-w-[90vw] md:max-w-[80vw] lg:max-w-[60vw]"
         onClick={(e) => e.stopPropagation()}
       >
         {children}

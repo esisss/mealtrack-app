@@ -52,6 +52,9 @@ export const pantryItems = pgTable(
 		unitToGrams: numeric('unit_to_grams'), // 1 unidad ≈ X g
 		unitToMl: numeric('unit_to_ml'), // 1 unidad ≈ X ml
 		kcalPerBaseUnit: numeric('kcal_per_base_unit'),
+		proteinPerBaseUnit: numeric('protein_per_base_unit'),
+		carbsPerBaseUnit: numeric('carbs_per_base_unit'),
+		fatPerBaseUnit: numeric('fat_per_base_unit'),
 		defaultPkgQty: numeric('default_pkg_qty'), // ej. 1000 (g), 6 (unit)
 		defaultPkgPrice: numeric('default_pkg_price'), // precio de referencia
 		tags: jsonb('tags').$type<string[]>(),
@@ -72,6 +75,11 @@ export const recipes = pgTable(
 		notes: text('notes'),
 		imageUrl: varchar('image_url'),
 		publicImageId: varchar('public_image_id'),
+		cookTime: numeric('cook_time'), // in minutes
+		prepTime: numeric('prep_time'), // in minutes
+		servings: numeric('servings').default('1'),
+		instructions: jsonb('instructions').$type<string[]>(),
+		tags: jsonb('tags').$type<string[]>(),
 		createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 		updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
 	},
