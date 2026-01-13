@@ -5,7 +5,9 @@ import {
 	addMealPlanEntry,
 	removeMealPlanEntry,
 	updateShoppingListForCycle,
+	getMealPlanEntry,
 } from '@/dal/dal';
+import { isBeforeToday, parseLocalDate } from '@/lib/date-utils';
 import { MealCycleInsert, MealCycleSelect, MealPlanEntryInsert } from '@/types';
 import { revalidatePath } from 'next/cache';
 type ActionResponse<T = undefined> = {
@@ -42,6 +44,11 @@ export const addMealPlanEntryAction = async (
 	entry: MealPlanEntryInsert,
 	userId: string
 ): Promise<ActionResponse<MealPlanEntryInsert>> => {
+	const entryDate = parseLocalDate(entry.day);
+	if (isBeforeToday(entryDate)) {
+		return { success: false, message: 'Cannot add entries to past days.' };
+	}
+
 	return actionWrapper(async () => {
 		const result = await addMealPlanEntry(entry);
 
@@ -56,6 +63,17 @@ export const removeMealPlanEntryAction = async (
 	cycleId: string,
 	userId: string
 ): Promise<ActionResponse> => {
+	const entry = await getMealPlanEntry(entryId);
+	if (entry.length > 0) {
+		const entryDate = parseLocalDate(entry[0].day);
+		if (isBeforeToday(entryDate)) {
+			return {
+				success: false,
+				message: 'Cannot remove entries from past days.',
+			};
+		}
+	}
+
 	return actionWrapper(async () => {
 		await removeMealPlanEntry(entryId);
 

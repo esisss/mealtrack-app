@@ -35,3 +35,10 @@ export function isSameDay(date1: string | Date, date2: string | Date): boolean {
 	const d2 = typeof date2 === 'string' ? date2 : formatLocalDate(date2);
 	return d1 === d2;
 }
+/**
+ * Checks if a Date object is before today (local time).
+ */
+export function isBeforeToday(date: Date): boolean {
+	const today = getTodayLocal();
+	return date < today;
+}

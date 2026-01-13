@@ -13,11 +13,12 @@ interface DayColumnProps {
     recipes: RecipeSelect[];
     onAddEntry: (recipeId: string, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack') => void;
     onRemoveEntry: (entryId: string) => void;
+    isEditable?: boolean;
 }
 
 const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
 
-export function DayColumn({ day, entries, recipes, onAddEntry, onRemoveEntry }: DayColumnProps) {
+export function DayColumn({ day, entries, recipes, onAddEntry, onRemoveEntry, isEditable = true }: DayColumnProps) {
 
 
     return (
@@ -49,18 +50,20 @@ export function DayColumn({ day, entries, recipes, onAddEntry, onRemoveEntry }: 
                                                 <span className='font-bold'>DONE</span><CheckSquareIcon className="h-4 w-4 text-primary inline mx-1" />
                                             </div>
                                         ) : (
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
-                                                onClick={() => onRemoveEntry(entry.id)}
-                                            >
-                                                <Trash2 className="h-3 w-3" />
-                                            </Button>
+                                            isEditable && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
+                                                    onClick={() => onRemoveEntry(entry.id)}
+                                                >
+                                                    <Trash2 className="h-3 w-3" />
+                                                </Button>
+                                            )
                                         )}
                                     </div>
                                 ))}
-                                {mealEntries.length === 0 && (
+                                {mealEntries.length === 0 && isEditable && (
                                     <RecipeSelector
                                         recipes={recipes}
                                         onSelect={(recipe) => onAddEntry(recipe.id, type)}

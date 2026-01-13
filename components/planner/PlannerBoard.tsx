@@ -6,7 +6,7 @@ import { startTransition, Suspense, useOptimistic, useState } from 'react';
 import toast from 'react-hot-toast';
 import { addMealPlanEntryAction, removeMealPlanEntryAction } from '@/app/actions/planneractions';
 import { DayIndicator } from '../pantry/grocery/DayIndicator';
-import { parseLocalDate, formatLocalDate, getTodayLocal } from '@/lib/date-utils';
+import { parseLocalDate, formatLocalDate, getTodayLocal, isBeforeToday } from '@/lib/date-utils';
 
 interface PlannerBoardProps {
     cycle: MealCycleSelect;
@@ -136,6 +136,7 @@ export function PlannerBoard({ cycle, entries, recipes, userId }: PlannerBoardPr
                         handleAddEntry(selectedDay, recipeId, mealType)
                     }
                     onRemoveEntry={handleRemoveEntry}
+                    isEditable={!isBeforeToday(selectedDay)}
                 />
             </div>
         </div>
