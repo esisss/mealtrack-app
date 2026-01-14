@@ -11,12 +11,12 @@ export default function LandingPage({
     <div>
       <Navbar />
       {children}
-      <footer className="w-full py-6 border-t">
+      <footer className="w-full flex justify-center py-6 border-t">
         <div className="container flex flex-col items-center justify-between gap-4 md:h-16 md:flex-row px-8">
           <p className="text-sm text-muted-foreground">
             Built by{" "}
             <Link
-              href="https://github.com/esisss/mealtrack-app"
+              href="https://github.com/esisss/"
               className="font-medium underline underline-offset-4"
             >
               @esisss

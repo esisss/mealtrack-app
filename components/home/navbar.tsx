@@ -9,6 +9,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Button } from "../ui/button";
+import { signInAsGuest } from "@/stack/guest/signin";
 
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -22,7 +24,7 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           {/* Left side - Logo */}
-          <div className="flex-shrink-0 flex items-center">
+          <div className="flex items-center">
             <Link
               href="/"
               className="text-xl font-bold text-foreground hover:text-primary transition-colors italic"
@@ -37,6 +39,7 @@ export function Navbar() {
           {/* Right side - Auth Buttons */}
           <div className="hidden sm:ml-6 sm:flex sm:items-center space-x-2">
             <ThemeToggle />
+            <Button onClick={signInAsGuest} variant="outline" className="hover:text-primary transition-colors cursor-pointer">Sign in as Guest</Button>
             <Link
               href="/handler/sign-in"
               className="text-muted-foreground hover:text-foreground px-3 py-2 text-sm font-medium transition-colors"
@@ -50,6 +53,7 @@ export function Navbar() {
               Sign up
             </Link>
           </div>
+
 
           {/* Mobile menu button and theme toggle */}
           <div className="-mr-2 flex items-center space-x-2 sm:hidden">
@@ -111,37 +115,6 @@ export function Navbar() {
         id="mobile-menu"
       >
         <Accordion type="single" collapsible className="w-full px-4 pb-4">
-          <AccordionItem value="navigation">
-            <AccordionTrigger className="text-base font-medium">
-              Navigation
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="space-y-1">
-                <Link
-                  href="/recipes"
-                  className="block pl-3 pr-4 py-2 text-base text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Recipes
-                </Link>
-                <Link
-                  href="/features"
-                  className="block pl-3 pr-4 py-2 text-base text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Features
-                </Link>
-                <Link
-                  href="/pricing"
-                  className="block pl-3 pr-4 py-2 text-base text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Pricing
-                </Link>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-
           <AccordionItem value="account">
             <AccordionTrigger className="text-base font-medium">
               Account

@@ -86,12 +86,12 @@ export function AppSidebar({ id, displayName }: { id: string; displayName: strin
                     width={200}
                     height={200}
                     src={`https://picsum.photos/seed/${id}/200/200`}
-                    alt={displayName}
+                    alt={displayName || "User"}
                     className=" object-cover"
                     loading="lazy"
                   />
                 </div>
-                <h3>{displayName}</h3>
+                <h3>{displayName || "User"}</h3>
               </div>
               <button
                 onClick={() => setIsLogoutDialogOpen(true)}
