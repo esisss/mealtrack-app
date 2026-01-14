@@ -240,6 +240,8 @@ export async function getCycleEntries(cycleId: string) {
 			servings: mealPlanEntries.servings,
 			done: mealPlanEntries.done,
 			recipeName: recipes.name,
+			imageUrl: recipes.imageUrl,
+			notes: recipes.notes,
 		})
 		.from(mealPlanEntries)
 		.leftJoin(recipes, eq(mealPlanEntries.recipeId, recipes.id))

@@ -47,8 +47,19 @@ const t = {
   author: "jesusesis",
 };
 
-export function AppSidebar() {
+import { useState } from "react";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import { useRouter } from "next/navigation";
+
+export function AppSidebar({ id, displayName }: { id: string; displayName: string }) {
   const { open, setOpen } = useSidebar();
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
+  const router = useRouter();
+
+  const handleLogout = () => {
+    router.push("/handler/sign-out");
+  };
+
   return (
     <Sidebar>
       <SidebarContent >
@@ -70,21 +81,34 @@ export function AppSidebar() {
             </SidebarMenu>
             <div className="mt-4 mx-2 flex items-center justify-between">
               <div className="h-8 w-8 rounded-md overflow-hidden">
-                <Image
-                  width={200}
-                  height={200}
-                  src={`https://picsum.photos/seed/${t.author}/200/200`}
-                  alt={t.author}
-                  className=" object-cover"
-                  loading="lazy"
-                />
+                <div>
+                  <Image
+                    width={200}
+                    height={200}
+                    src={`https://picsum.photos/seed/${id}/200/200`}
+                    alt={displayName}
+                    className=" object-cover"
+                    loading="lazy"
+                  />
+                </div>
+                <h3>{displayName}</h3>
               </div>
-              <Link href="/handler/sign-out">
-                <button className="text-primary-foreground px-2 py-1 rounded-md">
-                  <LogOut className="w-6 h-6 text-foreground" />
-                </button>
-              </Link>
+              <button
+                onClick={() => setIsLogoutDialogOpen(true)}
+                className="text-primary-foreground px-2 py-1 rounded-md"
+              >
+                <LogOut className="w-6 h-6 text-foreground" />
+              </button>
             </div>
+            <ConfirmationDialog
+              isOpen={isLogoutDialogOpen}
+              onClose={() => setIsLogoutDialogOpen(false)}
+              onConfirm={handleLogout}
+              title="Logout"
+              description="Are you sure you want to log out?"
+              confirmText="Logout"
+              variant="destructive"
+            />
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>

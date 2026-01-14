@@ -5,6 +5,7 @@ import { DayColumn } from './DayColumn';
 import { startTransition, Suspense, useOptimistic, useState } from 'react';
 import toast from 'react-hot-toast';
 import { addMealPlanEntryAction, removeMealPlanEntryAction } from '@/app/actions/planneractions';
+import { markConsumptionAction } from '@/app/actions/consumptionactions';
 import { DayIndicator } from '../pantry/grocery/DayIndicator';
 import { parseLocalDate, formatLocalDate, getTodayLocal, isBeforeToday } from '@/lib/date-utils';
 
@@ -19,7 +20,8 @@ type OptimisticEntry = MealPlanEntrySelect & { recipeName: string | null };
 
 type OptimisticAction =
     | { type: 'add'; entry: OptimisticEntry }
-    | { type: 'remove'; entryId: string };
+    | { type: 'remove'; entryId: string }
+    | { type: 'toggleDone'; entryId: string, done: boolean };
 
 export function PlannerBoard({ cycle, entries, recipes, userId }: PlannerBoardProps) {
     const startDate = parseLocalDate(cycle.startDate);
@@ -38,6 +40,10 @@ export function PlannerBoard({ cycle, entries, recipes, userId }: PlannerBoardPr
             return [...state, action.entry];
         } else if (action.type === 'remove') {
             return state.filter((entry) => entry.id !== action.entryId);
+        } else if (action.type === 'toggleDone') {
+            return state.map(entry =>
+                entry.id === action.entryId ? { ...entry, done: action.done } : entry
+            );
         }
         return state;
     });
@@ -62,7 +68,7 @@ export function PlannerBoard({ cycle, entries, recipes, userId }: PlannerBoardPr
             const optimisticEntry: OptimisticEntry = {
                 id: crypto.randomUUID(), // Temporary ID
                 cycleId: cycle.id,
-                day: day.toISOString(),
+                day: formatLocalDate(day),
                 mealType,
                 recipeId,
                 servings: '1',
@@ -75,7 +81,7 @@ export function PlannerBoard({ cycle, entries, recipes, userId }: PlannerBoardPr
             try {
                 await addMealPlanEntryAction({
                     cycleId: cycle.id,
-                    day: day.toISOString(),
+                    day: formatLocalDate(day),
                     mealType,
                     recipeId,
                     servings: '1',
@@ -111,6 +117,32 @@ export function PlannerBoard({ cycle, entries, recipes, userId }: PlannerBoardPr
         });
     };
 
+    const handleToggleDone = async (entryId: string, currentDone: boolean) => {
+        startTransition(async () => {
+            addOptimisticUpdate({ type: 'toggleDone', entryId, done: !currentDone });
+
+            try {
+                // If marking as done, we use markConsumptionAction which handles stock
+                if (!currentDone) {
+                    const result = await markConsumptionAction(userId, entryId);
+                    if (!result.success) {
+                        toast.error(result.error || 'Failed to mark as consumed');
+                        throw new Error('Failed');
+                    }
+                    toast.success('Meal marked as consumed');
+                } else {
+                    // If unmarking, we would need a different action or just update entry
+                    // For now, let's just use it as logic for mark only as per request
+                    toast.error('Unmarking is not supported yet');
+                    throw new Error('Not supported');
+                }
+            } catch (error) {
+                console.error('Failed to toggle done', error);
+                // Rollback happens automatically
+            }
+        });
+    };
+
     return (
         <div>
             <div className="flex flex-row justify-between items-center sm:px-4">
@@ -136,6 +168,7 @@ export function PlannerBoard({ cycle, entries, recipes, userId }: PlannerBoardPr
                         handleAddEntry(selectedDay, recipeId, mealType)
                     }
                     onRemoveEntry={handleRemoveEntry}
+                    onMarkDone={(entryId) => handleToggleDone(entryId, false)}
                     isEditable={!isBeforeToday(selectedDay)}
                 />
             </div>

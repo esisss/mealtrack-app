@@ -56,7 +56,7 @@ export const addMealPlanEntryAction = async (
 		await updateShoppingListForCycle(entry.cycleId, userId);
 
 		return result[0];
-	}, ['/dashboard/planner', '/pantry']);
+	}, ['/planner', '/pantry']);
 };
 export const removeMealPlanEntryAction = async (
 	entryId: string,
@@ -81,5 +81,5 @@ export const removeMealPlanEntryAction = async (
 		await updateShoppingListForCycle(cycleId, userId);
 
 		return undefined;
-	}, ['/dashboard/planner', '/pantry']);
+	}, ['/planner', '/pantry']);
 };
