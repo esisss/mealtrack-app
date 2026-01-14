@@ -133,6 +133,6 @@ export default function RecipesBoard({ recipes, pantryItems }: { recipes?: Recip
                 confirmText="Delete"
                 variant="destructive"
             />
-        </div>
+        </div >
     );
 }
