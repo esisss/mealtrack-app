@@ -8,9 +8,21 @@
 
 [Live Demo](https://mealtrack-app.vercel.app/)
 
-# MealTrack App 🍲
+# MealTrack 🍲
 
 MealTrack is a modern, full-stack web application designed to help you manage your pantry, plan your meals, and track your grocery shopping with ease. Built with performance and developer experience in mind.
+
+## Why MealTrack?
+
+Planning meals every week often leads to duplicated groceries, forgotten ingredients, and wasted food.
+MealTrack was built to solve this by combining recipe management, meal planning, and stock control in one place.
+
+## Features
+
+- 📚 Save and organize personal recipes
+- 🗓️ Plan weekly meal schedules
+- 🛒 Automatically generate grocery lists based on planned meals
+- 📦 Track ingredient stock to avoid overbuying
 
 ## 🚀 Vision & Contributions
 
@@ -35,7 +47,7 @@ One of the core design principles of MealTrack is its flexible **Data Access Lay
 > [!IMPORTANT]
 > By default, this project uses **Neon** and **Drizzle ORM**. However, you are not locked in!
 >
-> People can download this project and just add their own Database. While we recommend sticking to Neon or a PostgreSQL-compatible database to keep the DAL logic intact, you can modify the code to adjust it to your specific needs.
+> People can download this project and just add their own Database. While I recommend sticking to Neon or a PostgreSQL-compatible database to keep the DAL logic intact, you can modify the code to adjust it to your specific needs.
 >
 > If you use any PostgreSQL-compatible DB with Drizzle, the `dal/` and `db/` files should work with minimal to no changes.
 
