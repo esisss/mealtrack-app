@@ -69,20 +69,19 @@ export const StockBoard = ({
             earliestExpiry: expiry || existingStock?.earliestExpiry || null,
         };
 
-        startTransition(() => {
+        startTransition(async () => {
             updateOptimisticStock({ type: 'add', item: optimisticItem });
+            const result = await addStockLotAction(selectedItemId, qty, expiry, cycleId);
+
+            if (result.success) {
+                setIsAddDialogOpen(false);
+                setSelectedItemId("");
+                setQuantity("");
+                setExpiryDate("");
+            } else {
+                console.error('Failed to add stock:', result.message);
+            }
         });
-
-        const result = await addStockLotAction(selectedItemId, qty, expiry, cycleId);
-
-        if (result.success) {
-            setIsAddDialogOpen(false);
-            setSelectedItemId("");
-            setQuantity("");
-            setExpiryDate("");
-        } else {
-            console.error('Failed to add stock:', result.message);
-        }
     };
 
     const handleDeleteClick = (item: StockItem) => {
@@ -93,18 +92,17 @@ export const StockBoard = ({
     const handleDeleteConfirm = async () => {
         if (!itemToDelete) return;
 
-        startTransition(() => {
+        startTransition(async () => {
             updateOptimisticStock({ type: 'delete', item: itemToDelete });
+            const result = await deleteStockLotAction(itemToDelete.pantryItemId, cycleId);
+
+            if (result.success) {
+                setDeleteDialogOpen(false);
+                setItemToDelete(null);
+            } else {
+                console.error('Failed to delete stock:', result.message);
+            }
         });
-
-        const result = await deleteStockLotAction(itemToDelete.pantryItemId, cycleId);
-
-        if (result.success) {
-            setDeleteDialogOpen(false);
-            setItemToDelete(null);
-        } else {
-            console.error('Failed to delete stock:', result.message);
-        }
     };
 
     // Sort stock items by name

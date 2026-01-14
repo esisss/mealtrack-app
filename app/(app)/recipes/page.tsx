@@ -1,6 +1,7 @@
 
-
+import { Suspense } from "react";
 import RecipesBoard from "@/components/recipes/RecipesBoard";
+import { RecipesSkeleton } from "@/components/recipes/RecipesSkeleton";
 import { getPantryItems, getRecipes } from "@/dal/dal";
 import { pantryItems, recipes } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
@@ -16,6 +17,8 @@ export default async function RecipesPage() {
   //Fetch pantry items registered to use them down at recipe creation form (client component)
   const pantryItems: PantryItem[] = await getPantryItems(user ? user.id : "");
   return (
-    <RecipesBoard recipes={recipes} pantryItems={pantryItems} />
+    <Suspense fallback={<RecipesSkeleton />}>
+      <RecipesBoard recipes={recipes} pantryItems={pantryItems} />
+    </Suspense>
   );
 }

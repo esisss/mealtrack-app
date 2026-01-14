@@ -10,7 +10,7 @@ export const CookableRecipes = ({ recipes }: CookableRecipesProps) => {
     if (recipes.length === 0) return null;
 
     return (
-        <div className="mt-12 animate-in fade-in slide-in-from-bottom-4 duration-700 ">
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 mt-4">
             <div className="flex items-center gap-3 mb-6">
                 <ChefHatIcon className="text-primary w-6 h-6" />
                 <h2 className="text-xl font-bold">Ready to Cook Right Now</h2>

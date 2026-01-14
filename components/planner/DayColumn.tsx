@@ -13,11 +13,13 @@ interface DayColumnProps {
     recipes: RecipeSelect[];
     onAddEntry: (recipeId: string, mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack') => void;
     onRemoveEntry: (entryId: string) => void;
+    onMarkDone: (entryId: string) => void;
+    isEditable?: boolean;
 }
 
 const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
 
-export function DayColumn({ day, entries, recipes, onAddEntry, onRemoveEntry }: DayColumnProps) {
+export function DayColumn({ day, entries, recipes, onAddEntry, onRemoveEntry, onMarkDone, isEditable = true }: DayColumnProps) {
 
 
     return (
@@ -49,18 +51,32 @@ export function DayColumn({ day, entries, recipes, onAddEntry, onRemoveEntry }: 
                                                 <span className='font-bold'>DONE</span><CheckSquareIcon className="h-4 w-4 text-primary inline mx-1" />
                                             </div>
                                         ) : (
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
-                                                onClick={() => onRemoveEntry(entry.id)}
-                                            >
-                                                <Trash2 className="h-3 w-3" />
-                                            </Button>
+                                            isEditable && (
+                                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-6 w-6 text-primary hover:text-primary hover:bg-primary/10"
+                                                        onClick={() => onMarkDone(entry.id)}
+                                                        title="Mark as consumed"
+                                                    >
+                                                        <Check className="h-3 w-3" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-6 w-6 text-destructive hover:text-destructive"
+                                                        onClick={() => onRemoveEntry(entry.id)}
+                                                        title="Delete entry"
+                                                    >
+                                                        <Trash2 className="h-3 w-3" />
+                                                    </Button>
+                                                </div>
+                                            )
                                         )}
                                     </div>
                                 ))}
-                                {mealEntries.length === 0 && (
+                                {mealEntries.length === 0 && isEditable && (
                                     <RecipeSelector
                                         recipes={recipes}
                                         onSelect={(recipe) => onAddEntry(recipe.id, type)}

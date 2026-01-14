@@ -1,4 +1,6 @@
+import { Suspense } from 'react';
 import { PlannerBoard } from '@/components/planner/PlannerBoard';
+import { PlannerSkeleton } from '@/components/planner/PlannerSkeleton';
 import {
   getCycleEntries,
   getOrCreateCurrentCycle,
@@ -19,12 +21,14 @@ export default async function PlannerPage() {
 
   return (
     <div className="container mx-auto py-2">
-      <PlannerBoard
-        cycle={currentCycle}
-        entries={entries}
-        recipes={recipes}
-        userId={user.id}
-      />
+      <Suspense fallback={<PlannerSkeleton />}>
+        <PlannerBoard
+          cycle={currentCycle}
+          entries={entries}
+          recipes={recipes}
+          userId={user.id}
+        />
+      </Suspense>
     </div>
   );
 }

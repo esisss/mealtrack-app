@@ -1,5 +1,5 @@
-import { RecipeDetails } from "@/components/recipes/id/RecipeDetails";
-import { getRecipeById } from "@/dal/dal";
+import { RecipeDetailView } from "@/components/recipes/id/RecipeDetailView";
+import { getFullRecipeById } from "@/dal/dal";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 
@@ -13,12 +13,12 @@ export default async function RecipeDetailsPage({
     if (!IdSchema.safeParse(id).success) {
         notFound();
     }
-    const recipe = await getRecipeById(id);
+    const recipe = await getFullRecipeById(id);
 
 
-    if (!recipe || recipe.length === 0) {
+    if (!recipe) {
         notFound();
     }
 
-    return <RecipeDetails recipe={recipe[0]} />;
+    return <RecipeDetailView recipe={recipe} />;
 }

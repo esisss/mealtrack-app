@@ -32,15 +32,14 @@ export const GroceryBoard = ({ groceryItems }: { groceryItems: GroceryListItem[]
         const newStatus = item.status === 'bought' ? 'pending' : 'bought';
         const optimisticItem = { ...item, status: newStatus as 'pending' | 'bought' | 'skipped' };
 
-        startTransition(() => {
+        startTransition(async () => {
             updateOptimisticItem(optimisticItem);
+            const result = await toggleGroceryItemStatusAction(item.id, item.status, removeFromStock);
+
+            if (!result.success) {
+                console.error('Failed to update item status:', result.message);
+            }
         });
-
-        const result = await toggleGroceryItemStatusAction(item.id, item.status, removeFromStock);
-
-        if (!result.success) {
-            console.error('Failed to update item status:', result.message);
-        }
     };
 
     const handleCheckboxChange = (item: GroceryListItem) => {
@@ -72,15 +71,14 @@ export const GroceryBoard = ({ groceryItems }: { groceryItems: GroceryListItem[]
         if (!itemToDelete) return;
 
         // Optimistically remove the item from the UI
-        startTransition(() => {
+        startTransition(async () => {
             updateOptimisticItem({ id: itemToDelete.id, deleted: true });
+            const result = await deleteGroceryItemAction(itemToDelete.id);
+
+            if (!result.success) {
+                console.error('Failed to delete item:', result.message);
+            }
         });
-
-        const result = await deleteGroceryItemAction(itemToDelete.id);
-
-        if (!result.success) {
-            console.error('Failed to delete item:', result.message);
-        }
 
         setDeleteDialogOpen(false);
         setItemToDelete(null);

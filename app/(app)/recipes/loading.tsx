@@ -1,9 +1,7 @@
-import { Loader } from "@/components/ui/loader";
+import { RecipesSkeleton } from "@/components/recipes/RecipesSkeleton";
 
 export default function Loading() {
     return (
-        <div className="flex items-center justify-center h-screen">
-            <div className="loader"><Loader /></div>
-        </div>
+        <RecipesSkeleton />
     );
 }
