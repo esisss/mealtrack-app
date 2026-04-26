@@ -1,15 +1,10 @@
 import { PantryBoard } from "@/components/pantry/items/PantryBoard";
 import { getPantryItems, getOrCreateCurrentCycle, getShoppingListWithItems, getOrCreateShoppingListForCycle, getCurrentStockWithDetails } from "@/dal/dal";
-import { getCurrentUser } from "@/lib/auth";
+import { requireAuthOrRedirect } from "@/lib/auth";
 import { PantryTab } from "@/components/pantry/pantryTab";
 
 export default async function PantryPage() {
-  const user = await getCurrentUser();
-
-  if (!user) {
-    console.error('[PantryPage] No user found');
-    return <div>Please sign in</div>;
-  }
+  const user = await requireAuthOrRedirect();
 
   console.log('[PantryPage] User:', user.id);
 

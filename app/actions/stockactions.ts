@@ -7,7 +7,7 @@ import {
 	deleteStockLotsByItem,
 	updateShoppingListForCycle,
 } from '@/dal/dal';
-import { getCurrentUser } from '@/lib/auth';
+import { isNotAuthenticatedError, requireAuth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 
 export type ActionResponse<T> = {
@@ -23,14 +23,7 @@ export async function getStockAction() {
 	try {
 		console.log('[getStockAction] Starting');
 
-		const user = await getCurrentUser();
-		if (!user) {
-			console.log('[getStockAction] User not authenticated');
-			return {
-				success: false,
-				message: 'User not authenticated',
-			};
-		}
+		const user = await requireAuth();
 
 		console.log('[getStockAction] User authenticated:', user.id);
 
@@ -43,6 +36,14 @@ export async function getStockAction() {
 			data: stockItems,
 		};
 	} catch (error) {
+		if (isNotAuthenticatedError(error)) {
+			console.log('[getStockAction] User not authenticated');
+			return {
+				success: false,
+				message: error.message,
+			};
+		}
+
 		console.error('[getStockAction] Error:', error);
 		return {
 			success: false,
@@ -69,13 +70,7 @@ export async function addStockLotAction(
 			expiresAt,
 		});
 
-		const user = await getCurrentUser();
-		if (!user) {
-			return {
-				success: false,
-				message: 'User not authenticated',
-			};
-		}
+		const user = await requireAuth();
 
 		const newLot = await addStockLot(
 			user.id,
@@ -96,6 +91,13 @@ export async function addStockLotAction(
 			data: newLot,
 		};
 	} catch (error) {
+		if (isNotAuthenticatedError(error)) {
+			return {
+				success: false,
+				message: error.message,
+			};
+		}
+
 		console.error('[addStockLotAction] Error:', error);
 		return {
 			success: false,
@@ -143,13 +145,7 @@ export async function deleteStockLotAction(
 	try {
 		console.log('[deleteStockLotAction] Deleting stock for:', pantryItemId);
 
-		const user = await getCurrentUser();
-		if (!user) {
-			return {
-				success: false,
-				message: 'User not authenticated',
-			};
-		}
+		const user = await requireAuth();
 
 		const deleted = await deleteStockLotsByItem(user.id, pantryItemId);
 
@@ -168,6 +164,13 @@ export async function deleteStockLotAction(
 			data: deleted,
 		};
 	} catch (error) {
+		if (isNotAuthenticatedError(error)) {
+			return {
+				success: false,
+				message: error.message,
+			};
+		}
+
 		console.error('[deleteStockLotAction] Error:', error);
 		return {
 			success: false,

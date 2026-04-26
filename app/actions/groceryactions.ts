@@ -8,7 +8,7 @@ import {
 	getShoppingListItemById,
 	getStockLotByItemId,
 } from '@/dal/dal';
-import { getCurrentUser } from '@/lib/auth';
+import { isNotAuthenticatedError, requireAuth } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 
 export type ActionResponse<T> = {
@@ -24,14 +24,7 @@ export async function getGroceryListAction(cycleId: string) {
 	try {
 		console.log('[getGroceryListAction] Starting with cycleId:', cycleId);
 
-		const user = await getCurrentUser();
-		if (!user) {
-			console.log('[getGroceryListAction] User not authenticated');
-			return {
-				success: false,
-				message: 'User not authenticated',
-			};
-		}
+		const user = await requireAuth();
 
 		console.log('[getGroceryListAction] User authenticated:', user.id);
 
@@ -52,6 +45,14 @@ export async function getGroceryListAction(cycleId: string) {
 			data: items,
 		};
 	} catch (error) {
+		if (isNotAuthenticatedError(error)) {
+			console.log('[getGroceryListAction] User not authenticated');
+			return {
+				success: false,
+				message: error.message,
+			};
+		}
+
 		console.error('[getGroceryListAction] Error:', error);
 		return {
 			success: false,
@@ -74,13 +75,7 @@ export async function toggleGroceryItemStatusAction(
 		const newStatus = currentStatus === 'bought' ? 'pending' : 'bought';
 
 		// Get the current user
-		const user = await getCurrentUser();
-		if (!user) {
-			return {
-				success: false,
-				message: 'User not authenticated',
-			};
-		}
+		const user = await requireAuth();
 
 		// Get the shopping list item details
 		const item = await getShoppingListItemById(itemId);
@@ -128,6 +123,13 @@ export async function toggleGroceryItemStatusAction(
 			data: { newStatus },
 		};
 	} catch (error) {
+		if (isNotAuthenticatedError(error)) {
+			return {
+				success: false,
+				message: error.message,
+			};
+		}
+
 		console.error('Error updating item status:', error);
 		return {
 			success: false,
@@ -141,13 +143,7 @@ export async function toggleGroceryItemStatusAction(
  */
 export async function deleteGroceryItemAction(itemId: string) {
 	try {
-		const user = await getCurrentUser();
-		if (!user) {
-			return {
-				success: false,
-				message: 'User not authenticated',
-			};
-		}
+		await requireAuth();
 
 		const { deleteShoppingListItem } = await import('@/dal/dal');
 		const deleted = await deleteShoppingListItem(itemId);
@@ -166,6 +162,13 @@ export async function deleteGroceryItemAction(itemId: string) {
 			message: 'Item deleted successfully',
 		};
 	} catch (error) {
+		if (isNotAuthenticatedError(error)) {
+			return {
+				success: false,
+				message: error.message,
+			};
+		}
+
 		console.error('Error deleting grocery item:', error);
 		return {
 			success: false,

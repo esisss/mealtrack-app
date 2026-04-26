@@ -11,7 +11,7 @@ import {
 	getRecipeIngredients,
 	updateShoppingListForCycle,
 } from '@/dal/dal';
-import { getCurrentUser } from '@/lib/auth';
+import { isNotAuthenticatedError, requireAuth } from '@/lib/auth';
 import { checkArrayIncludesNewArrayBy } from '@/utils/checkArrayIncludesNewArrayBy';
 import { log } from 'console';
 import z from 'zod';
@@ -138,7 +138,13 @@ export const validateAndSendRecipe = async (
 			errors: flattened.fieldErrors as Record<string, string[]>,
 		};
 	}
-	const user = await getCurrentUser();
+	const user = await requireAuth().catch((error) => {
+		if (isNotAuthenticatedError(error)) {
+			return null;
+		}
+
+		throw error;
+	});
 	if (!user) {
 		return {
 			success: false,
@@ -234,7 +240,13 @@ export const validateAndSendRecipe = async (
 export const deleteRecipeAction = async (
 	recipeId: string
 ): Promise<RecipeActionResponse> => {
-	const user = await getCurrentUser();
+	const user = await requireAuth().catch((error) => {
+		if (isNotAuthenticatedError(error)) {
+			return null;
+		}
+
+		throw error;
+	});
 	if (!user) {
 		return {
 			success: false,
@@ -378,7 +390,13 @@ export const updateRecipeAction = async (
 		};
 	}
 
-	const user = await getCurrentUser();
+	const user = await requireAuth().catch((error) => {
+		if (isNotAuthenticatedError(error)) {
+			return null;
+		}
+
+		throw error;
+	});
 	if (!user) {
 		return {
 			success: false,
