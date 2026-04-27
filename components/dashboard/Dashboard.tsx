@@ -1,4 +1,7 @@
-import { checkStockForRecipe, getCycleEntries, getRecipeById, getThisWeekCycle, getCookableRecipes, getExpiringStock, getLowStockItems, getConsumptionStreak } from "@/dal/dal";
+import { checkStockForRecipe, getCookableRecipes, getExpiringStock, getLowStockItems, getConsumptionStreak } from "@/dal/consumption/dal.consumption";
+import { getCycleEntries } from "@/dal/planner/dal.planner";
+import { getThisWeekCycle } from "@/dal/planner/dal.planner";
+import { getRecipeById } from "@/dal/recipe/dal.recipe";
 import { MarkConsumption } from "./MarkConsumption"
 import { CookableRecipes } from "./CookableRecipes";
 import { QuickActions } from "./QuickActions";

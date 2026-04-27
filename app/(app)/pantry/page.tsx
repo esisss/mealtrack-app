@@ -1,5 +1,8 @@
 import { PantryBoard } from "@/components/pantry/items/PantryBoard";
-import { getPantryItems, getOrCreateCurrentCycle, getShoppingListWithItems, getOrCreateShoppingListForCycle, getCurrentStockWithDetails } from "@/dal/dal";
+import { getPantryItems } from "@/dal/pantry/dal.pantry";
+import { getOrCreateCurrentCycle } from "@/dal/planner/dal.planner";
+import { getShoppingListWithItems, getOrCreateShoppingListForCycle } from "@/dal/shopping/dal.shopping";
+import { getCurrentStockWithDetails } from "@/dal/stock/dal.stock";
 import { requireAuthOrRedirect } from "@/lib/auth";
 import { PantryTab } from "@/components/pantry/pantryTab";
 

@@ -2,7 +2,8 @@
 import { Suspense } from "react";
 import RecipesBoard from "@/components/recipes/RecipesBoard";
 import { RecipesSkeleton } from "@/components/recipes/RecipesSkeleton";
-import { getPantryItems, getRecipes } from "@/dal/dal";
+import { getPantryItems } from "@/dal/pantry/dal.pantry";
+import { getRecipes } from "@/dal/recipe/dal.recipe";
 import { pantryItems, recipes } from "@/db/schema";
 import { requireAuthOrRedirect } from "@/lib/auth";
 import { InferSelectModel } from "drizzle-orm";
