@@ -1,12 +1,9 @@
-import { Suspense } from 'react';
-import { PlannerBoard } from '@/components/planner/PlannerBoard';
-import { PlannerSkeleton } from '@/components/planner/PlannerSkeleton';
-import {
-  getCycleEntries,
-  getOrCreateCurrentCycle,
-  getRecipes,
-} from '@/dal/dal';
-import { getCurrentUser } from '@/lib/auth';
+import { Suspense } from "react";
+import { PlannerBoard } from "@/components/planner/PlannerBoard";
+import { PlannerSkeleton } from "@/components/planner/PlannerSkeleton";
+import { getCycleEntries, getOrCreateCurrentCycle } from "@/dal/planner/dal.planner";
+import { getRecipes } from "@/dal/recipe/dal.recipe";
+import { getCurrentUser } from "@/lib/auth";
 
 export default async function PlannerPage() {
   const user = await getCurrentUser();

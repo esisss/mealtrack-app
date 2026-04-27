@@ -1,5 +1,5 @@
 import { RecipeDetailView } from "@/components/recipes/id/RecipeDetailView";
-import { getFullRecipeById } from "@/dal/dal";
+import { getFullRecipeById } from "@/dal/recipe/dal.recipe";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 

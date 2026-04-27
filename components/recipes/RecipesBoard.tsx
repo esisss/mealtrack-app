@@ -6,7 +6,7 @@ import { Loader } from "@/components/ui/loader";
 import { RecipeForm } from "@/components/forms/ui/recipe-form";
 import { pantryItems, recipes } from "@/db/schema";
 import { InferSelectModel } from "drizzle-orm";
-import { getPantryItems, getRecipeIngredients } from "@/dal/dal";
+import { getRecipeIngredients } from "@/dal/recipe/dal.recipe";
 import { deleteRecipeAction } from "@/app/actions/recipe-form-action";
 import { toast } from "react-hot-toast";
 import { Pencil, Trash2 } from "lucide-react";

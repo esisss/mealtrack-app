@@ -1,85 +1,83 @@
-'use server';
+"use server";
 import {
-	getCycleEntries,
-	getOrCreateCurrentCycle,
-	addMealPlanEntry,
-	removeMealPlanEntry,
-	updateShoppingListForCycle,
-	getMealPlanEntry,
-} from '@/dal/dal';
-import { isBeforeToday, parseLocalDate } from '@/lib/date-utils';
-import { MealCycleInsert, MealCycleSelect, MealPlanEntryInsert } from '@/types';
-import { revalidatePath } from 'next/cache';
+  getCycleEntries,
+  getOrCreateCurrentCycle,
+  addMealPlanEntry,
+  removeMealPlanEntry,
+  getMealPlanEntry,
+} from "@/dal/planner/dal.planner";
+import { updateShoppingListForCycle } from "@/dal/shopping/dal.shopping";
+import { isBeforeToday, parseLocalDate } from "@/lib/date-utils";
+import { MealCycleInsert, MealCycleSelect, MealPlanEntryInsert } from "@/types";
+import { revalidatePath } from "next/cache";
 type ActionResponse<T = undefined> = {
-	success: boolean;
-	message: string;
-	data?: T;
+  success: boolean;
+  message: string;
+  data?: T;
 };
 
 const actionWrapper = async <T>(
-	action: () => Promise<T>,
-	revalidatePaths: string[] = []
+  action: () => Promise<T>,
+  revalidatePaths: string[] = [],
 ): Promise<ActionResponse<T>> => {
-	try {
-		const data = await action();
-		revalidatePaths.forEach((path) => revalidatePath(path));
-		return { success: true, message: 'Success', data };
-	} catch (error: any) {
-		console.error('Action error:', error);
-		return {
-			success: false,
-			message: error.message || 'An unexpected error occurred.',
-		};
-	}
+  try {
+    const data = await action();
+    revalidatePaths.forEach((path) => revalidatePath(path));
+    return { success: true, message: "Success", data };
+  } catch (error: any) {
+    console.error("Action error:", error);
+    return {
+      success: false,
+      message: error.message || "An unexpected error occurred.",
+    };
+  }
 };
 
 export const getOrCreateCycle = async (
-	userId: string
+  userId: string,
 ): Promise<ActionResponse<MealCycleInsert>> => {
-	return actionWrapper(
-		async () => await getOrCreateCurrentCycle(userId, new Date())
-	);
+  return actionWrapper(
+    async () => await getOrCreateCurrentCycle(userId, new Date()),
+  );
 };
 export const addMealPlanEntryAction = async (
-	entry: MealPlanEntryInsert,
-	userId: string
+  entry: MealPlanEntryInsert,
+  userId: string,
 ): Promise<ActionResponse<MealPlanEntryInsert>> => {
-	const entryDate = parseLocalDate(entry.day);
-	if (isBeforeToday(entryDate)) {
-		return { success: false, message: 'Cannot add entries to past days.' };
-	}
+  const entryDate = parseLocalDate(entry.day);
+  if (isBeforeToday(entryDate)) {
+    return { success: false, message: "Cannot add entries to past days." };
+  }
 
-	return actionWrapper(async () => {
-		const result = await addMealPlanEntry(entry);
+  return actionWrapper(async () => {
+    const result = await addMealPlanEntry(entry);
 
-		// Update the shopping list to reflect the new meal plan entry
-		await updateShoppingListForCycle(entry.cycleId, userId);
+    await updateShoppingListForCycle(entry.cycleId, userId);
 
-		return result[0];
-	}, ['/planner', '/pantry']);
+    return result[0];
+  }, ["/planner", "/pantry"]);
 };
 export const removeMealPlanEntryAction = async (
-	entryId: string,
-	cycleId: string,
-	userId: string
+  entryId: string,
+  cycleId: string,
+  userId: string,
 ): Promise<ActionResponse> => {
-	const entry = await getMealPlanEntry(entryId);
-	if (entry.length > 0) {
-		const entryDate = parseLocalDate(entry[0].day);
-		if (isBeforeToday(entryDate)) {
-			return {
-				success: false,
-				message: 'Cannot remove entries from past days.',
-			};
-		}
-	}
+  const entry = await getMealPlanEntry(entryId);
+  if (entry.length > 0) {
+    const entryDate = parseLocalDate(entry[0].day);
+    if (isBeforeToday(entryDate)) {
+      return {
+        success: false,
+        message: "Cannot remove entries from past days.",
+      };
+    }
+  }
 
-	return actionWrapper(async () => {
-		await removeMealPlanEntry(entryId);
+  return actionWrapper(async () => {
+    await removeMealPlanEntry(entryId);
 
-		// Update the shopping list to reflect the removed meal plan entry
-		await updateShoppingListForCycle(cycleId, userId);
+    await updateShoppingListForCycle(cycleId, userId);
 
-		return undefined;
-	}, ['/planner', '/pantry']);
+    return undefined;
+  }, ["/planner", "/pantry"]);
 };
